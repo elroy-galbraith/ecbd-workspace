@@ -34,14 +34,19 @@ CACHE = Path(__file__).resolve().parent / ".cache"
 
 # ---------------------------------------------------------------- loading
 
-def from_split(split, metric="bleurt-20"):
-    """OpenEval archive parquet -> long frame. Downloads once, then caches."""
+def fetch_split(split):
+    """Path to the cached parquet for an archive split, downloading if needed."""
     CACHE.mkdir(exist_ok=True)
     dest = CACHE / f"{split}_response.parquet"
     if not dest.exists():
         print(f"downloading {split} ...", file=sys.stderr)
         urllib.request.urlretrieve(URL.format(split=split), dest)
-    d = pd.read_parquet(dest, columns=["response_id", "model", "scores"])
+    return dest
+
+
+def from_split(split, metric="bleurt-20"):
+    """OpenEval archive parquet -> long frame. Downloads once, then caches."""
+    d = pd.read_parquet(fetch_split(split), columns=["response_id", "model", "scores"])
     rows = []
     for rid, mo, sc in zip(d.response_id, d.model, d.scores):
         try:

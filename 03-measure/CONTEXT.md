@@ -23,11 +23,11 @@ Measuring is a different job from designing or reading, and it needs data neithe
 
 **Emit** — an eval designed here has been run by your harness. Stage 1 names the results file, stage 2 conforms it, stage 4 also assembles a release bundle.
 
-## Neither direction has been run through these stages
+## Maturity
 
-Be clear about this. `audit-truthfulqa` invoked `_tools/item_analysis.py` **inline from audit stage 5**, before this pipeline existed. That produced the evidence these contracts were written from, and it is why the analysis is trustworthy — but it is not the same as a measure run, and `worksheets/_index/log.md` holds no `measure-` row.
+**Consume: proven.** `measure-truthfulqa` ran all four stages end to end. It found two defects in these contracts — both fixed — and revised two strength labels in the audit it serves.
 
-The consume path is therefore *derived from* something that worked. The emit path is not: it additionally waits on `01-design/` producing a build, and on that build conforming to the results contract. Expect loop-backs in both.
+**Emit: unproven.** It waits on `01-design/` producing a build, and on that build conforming to the results contract. Expect loop-backs.
 
 ## This line does not run evals
 

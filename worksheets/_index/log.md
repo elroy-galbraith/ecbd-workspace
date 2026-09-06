@@ -8,4 +8,5 @@ The catalog: one line per run, added when the run folder is created. It records 
 
 | Slug | Mode | Subject | Opened | Owner |
 |---|---|---|---|---|
-| audit-truthfulqa | audit | TruthfulQA as a shipping gate for a customer-facing assistant | 2026-09-06 | |
+| audit-truthfulqa | audit | TruthfulQA fitness for model selection | 2026-09-06 | |
+| measure-truthfulqa | measure | Item-level psychometrics for audit-truthfulqa | 2026-09-06 | |

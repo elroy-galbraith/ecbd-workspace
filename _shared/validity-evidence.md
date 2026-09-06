@@ -30,6 +30,14 @@ Every SUPPORT answer gets one. Use them in the validity register and never round
 | `precedent-only` | "Prior work does it this way." **Not validity evidence.** Record it as a gap. |
 | `none` | No evidence identified. A finding, not an embarrassment. |
 
+## `none` means unexamined, not unsupported
+
+The commonest misreading, and it cost a real run. Evidence that a method **fails** is still evidence, and it takes the label its method earns — usually `empirical-direct`, with the finding recorded as negative.
+
+A benchmark nobody has checked and a benchmark that has been checked and found wanting both look like `none` if you read the label as "nothing supports this." They are completely different situations, and the register exists to tell them apart. `audit-truthfulqa` recorded Q14 and Q20 as `none` while holding the measurements that bore on both; `measure-truthfulqa` corrected them to `empirical-direct` with negative findings.
+
+So: `none` is for a slot where nobody has looked. If someone looked and the answer was bad, that is a result — label it as one.
+
 ## Precedent is not evidence
 
 Following prior practice is the most common thing found in the SUPPORT slot, and it does not belong there. Methods well-justified in one context may be unsuited to another — particularly where the capabilities under measurement are defined differently. A metric being standard is a fact about the field, not about whether it captures your construct.

@@ -3,7 +3,8 @@
 Contract for the input:  _shared/results-contract.md
 Target schema:           _shared/openeval-schema.md
 
-    python _tools/conform.py --check results.jsonl
+    python _tools/conform.py --check results.jsonl     # flat rows, or conformed records
+    python _tools/conform.py --split truthfulqa        # count an archive split
     python _tools/conform.py results.jsonl --out records/ \
         --benchmark my-eval --benchmark-version 1.0 --run design-my-eval
 
@@ -27,7 +28,55 @@ MIN_MODELS_DISCRIM, MIN_MODELS_STABILITY, MIN_ITEMS_GAP = 20, 40, 100
 # Thresholds are shared with item_analysis.py so stage 2 and stage 3 agree.
 
 
+def count_split(split):
+    """Count an archive split and report coverage of the fields analysis needs.
+
+    Archive records were validated against the schema when the contributor
+    ingested them. Re-running a schema check adds nothing. What matters here is
+    whether the fields THIS analysis depends on are actually populated -- an
+    optional field the schema permits to be empty is a finding for us.
+    """
+    import pandas as pd
+    from item_analysis import fetch_split
+
+    d = pd.read_parquet(fetch_split(split))
+    n = len(d)
+    items = {"_".join(r.split("_")[:3]) for r in d.response_id}
+    models = {m["name"] for m in d.model}
+
+    have = Counter()
+    metrics = Counter()
+    for mo, ia, sc in zip(d.model, d.get("item_adaptation", [None] * n), d.scores):
+        try:
+            met = sc["metric"][0]
+            metrics[met["name"]] += 1
+            ea = met["extra_artifacts"]
+            for k in dict(zip(list(ea["type"]), list(ea["content"]))):
+                have[f"extra_artifacts.{k}"] += 1
+        except Exception:
+            pass
+        if (mo.get("model_adaptation") or {}).get("generation_parameters"):
+            have["model_adaptation.generation_parameters"] += 1
+        if ia is not None and len(ia.get("request_input", []) or []):
+            have["item_adaptation.request_input"] += 1
+
+    report(len(items), len(models), n, Counter())
+    print()
+    print("metrics present:", dict(metrics))
+    print("field coverage (of %d responses):" % n)
+    for f in ["item_adaptation.request_input", "model_adaptation.generation_parameters",
+              "extra_artifacts.label", "extra_artifacts.informative",
+              "extra_artifacts.ecbd_capability"]:
+        c = have.get(f, 0)
+        print(f"  {100*c/n:5.1f}%  {f}" + ("" if c else "   <- absent")) 
+    return [], ["archive records were validated on ingest; this reports coverage "
+                "of the fields the analysis needs, which is the check that matters here."]
+
+
 def read(path):
+    if not Path(path).exists():
+        raise SystemExit(f"{path}: no such file. For an OpenEval archive split "
+                         f"use --split {path} instead.")
     rows = []
     for n, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
         line = line.strip()
@@ -200,7 +249,9 @@ def conform(rows, benchmark, version, run, paper=None, dataset=None):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("results")
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("results", nargs="?", help="flat contract rows, or conformed records")
+    src.add_argument("--split", help="OpenEval archive split to count, e.g. truthfulqa")
     ap.add_argument("--check", action="store_true", help="validate only, write nothing")
     ap.add_argument("--out")
     ap.add_argument("--benchmark", default="unnamed")
@@ -209,6 +260,12 @@ def main():
     ap.add_argument("--paper-url")
     ap.add_argument("--dataset-url")
     a = ap.parse_args()
+
+    if a.split:
+        problems, notes = count_split(a.split)
+        for n in notes:
+            print(f"note: {n}", file=sys.stderr)
+        raise SystemExit(0)
 
     rows = read(a.results)
     nested = is_nested(rows)

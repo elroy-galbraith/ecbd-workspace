@@ -22,7 +22,7 @@ The first two walk the same twenty questions. Every run becomes one folder in `w
 |---|---|
 | `02-audit/` | **Proven.** Run end to end on TruthfulQA, including item-level psychometrics. Two loop-backs, both caught real errors. |
 | `01-design/` | **Scaffolded, never run.** Contracts have survived three adversarial cold-agent walk-throughs and zero real use. It is the harder half — it makes decisions rather than reading them — so expect loop-backs the audit line did not need. |
-| `03-measure/` | **Scaffolded, never run as a pipeline.** Its contracts are derived from analysis that worked — `audit-truthfulqa` ran it inline from audit stage 5 — but no `measure-` run exists. The emit path additionally waits on `01-design/` producing a build. |
+| `03-measure/` | **Consume path proven.** `measure-truthfulqa` ran all four stages, found two contract defects, and revised two strength labels in the audit it serves. The *emit* path is still unproven — it waits on `01-design/` producing a build. |
 | `_tools/` | **Working, narrow.** `item_analysis.py` assumes OpenEval's `bleurt-20` record shape; other benchmarks need their own accessor. |
 
 ## What this actually gives you

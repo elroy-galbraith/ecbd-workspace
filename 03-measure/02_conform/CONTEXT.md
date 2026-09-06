@@ -12,10 +12,10 @@ Bad records produce confident nonsense downstream. This stage exists so that fai
 - Reference (every run): ../../_tools/CONTEXT.md
 
 ## Process
-1. **Consume direction:** the records already conform. Validate them with `--check`, record the schema version, and note any field the archive leaves empty that the analysis will need. For a submission-grade check use `validator.py` from `open-eval/OpenEval`.
+1. **Consume direction:** the records already conform — they were validated when the contributor ingested them, and re-running a schema check adds nothing. Run `python _tools/conform.py --split <name>`, which reports **coverage of the fields this analysis depends on**. An optional field the schema permits to be empty is a finding for us. Record the schema version and every gap.
 2. **Emit direction:** run `python _tools/conform.py <results.jsonl> --out records/` to map the results file into the schema.
 3. Carry ECBD capability tags into `scores[].metric.extra_artifacts` using the convention in openeval-schema.md. Record in the output that these tags are a local convention, not part of the standard.
-4. Validate with `python _tools/conform.py --check <file>` — it detects whether the file is flat contract rows or already-conformed records and checks accordingly. Fix violations at source where you can. Where a field genuinely cannot be filled, record which and why — an absent `request_input` means every later claim about adaptation is unsupported.
+4. **Emit direction:** validate with `python _tools/conform.py --check <file>` — it detects whether the input is flat contract rows or already-conformed records. Fix violations at source where you can. Where a field genuinely cannot be filled, record which and why — an absent `request_input` means every later claim about adaptation is unsupported.
 5. Report the shape actually obtained: items, models, responses, metrics present, coverage per model. Where it differs from stage 1's estimate, say so.
 6. Tick this stage's row in `RUN.md` and set `status: in-progress` if it is still `intake`. The tick means the output is written and ready for the human check below, not that it passed.
 
