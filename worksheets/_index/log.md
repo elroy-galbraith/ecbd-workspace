@@ -11,3 +11,4 @@ The catalog: one line per run, added when the run folder is created. It records 
 | audit-truthfulqa | audit | TruthfulQA fitness for model selection | 2026-09-06 | |
 | measure-truthfulqa | measure | Item-level psychometrics for audit-truthfulqa | 2026-09-06 | |
 | audit-gpqa | audit | GPQA fitness for model selection | 2026-09-07 | |
+| measure-gpqa | measure | Item-level psychometrics for audit-gpqa | 2026-09-07 | |

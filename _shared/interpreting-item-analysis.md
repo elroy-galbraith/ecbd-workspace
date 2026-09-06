@@ -40,6 +40,10 @@ The thresholds come from classical test theory. They are conventions, not laws. 
 
 **What it means.** Two models must differ by more than the scores actually differ. The positions on the leaderboard are not supported by the data.
 
+**Good items do not fix this.** Two benchmarks in this workspace fail to rank, for opposite reasons. TruthfulQA is noisy: half its items hardly separate models, and its two halves disagree about a quarter of model pairs. GPQA is close to ideal. Its mean discrimination is 0.457, its KR-20 is 0.993, and its two halves agree on 95.5% of model pairs. It still cannot separate neighbouring models. With 446 items the standard error is 2.0 points, and the models sit 0.45 points apart.
+
+Resolution comes from the item count and the size of the real difference, not from item quality. If you see a high KR-20 and high discrimination, do not conclude that the ranking is safe. Check the separating gap.
+
 **If you own it.** Standard error falls as 1 over the square root of the item count. **To halve the gap you need four times as many items.** Usually the honest conclusion is different: your eval is a screen, not a ranker. Say so. It costs less than buying resolution you cannot afford. If you must rank, better items help more than more items. See `low-discrimination`.
 
 **If you do not own it.** Report intervals, not positions. Treat any gap below the threshold as a tie. This one change prevents most misuse.

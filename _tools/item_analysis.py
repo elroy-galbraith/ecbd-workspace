@@ -27,21 +27,40 @@ from scipy.stats import pearsonr, spearmanr
 SEED = 20260906
 MIN_MODELS_DISCRIM, MIN_MODELS_STABILITY, MIN_ITEMS_GAP = 20, 40, 100
 MIN_ITEMS_PER_MODEL, COVERAGE = 0.8, 0.8   # both as fractions of the item set
-URL = ("https://huggingface.co/api/datasets/Open-Eval-Commons/OpenEval"
-       "/parquet/{config}/{split}/0.parquet")
+LIST_URL = ("https://huggingface.co/api/datasets/Open-Eval-Commons/OpenEval"
+            "/parquet/{config}/{split}")
 CACHE = Path(__file__).resolve().parent / ".cache"
 
 
 # ---------------------------------------------------------------- loading
 
 def fetch_split(split, config="response"):
-    """Path to the cached parquet for an archive split, downloading if needed."""
+    """Cached parquet shards for an archive split, downloading any that are missing.
+
+    Splits are sharded. Reading only shard 0 silently analyses part of the data
+    and reports it as the whole -- truthfulqa has one shard so this was invisible
+    until gpqa (4 shards) and bbq (13) turned up. Always read every shard.
+    """
     CACHE.mkdir(exist_ok=True)
-    dest = CACHE / f"{split}_{config}.parquet"
-    if not dest.exists():
-        print(f"downloading {split}/{config} ...", file=sys.stderr)
-        urllib.request.urlretrieve(URL.format(config=config, split=split), dest)
-    return dest
+    urls = json.loads(urllib.request.urlopen(
+        LIST_URL.format(config=config, split=split)).read())
+    if not urls:
+        raise SystemExit(f"{split}/{config}: no parquet files found")
+    paths = []
+    for i, u in enumerate(urls):
+        dest = CACHE / f"{split}_{config}_{i}.parquet"
+        if not dest.exists():
+            print(f"downloading {split}/{config} shard {i+1}/{len(urls)} ...",
+                  file=sys.stderr)
+            urllib.request.urlretrieve(u, dest)
+        paths.append(dest)
+    return paths
+
+
+def read_split(split, config="response", columns=None):
+    """Every shard of a split, concatenated."""
+    parts = [pd.read_parquet(p, columns=columns) for p in fetch_split(split, config)]
+    return pd.concat(parts, ignore_index=True)
 
 
 def item_facets(split, key):
@@ -51,7 +70,7 @@ def item_facets(split, key):
     is legal OpenEval and invisible to the schema. TruthfulQA carries
     is_adversarial and category there.
     """
-    d = pd.read_parquet(fetch_split(split, "item"))
+    d = read_split(split, "item")
     out = {}
     for iid, content in zip(d.item_id, d.item_content):
         try:
@@ -63,23 +82,45 @@ def item_facets(split, key):
     return out
 
 
-def from_split(split, metric="bleurt-20"):
-    """OpenEval archive parquet -> long frame. Downloads once, then caches."""
-    d = pd.read_parquet(fetch_split(split), columns=["response_id", "model", "scores"])
+def from_split(split, metric=None):
+    """OpenEval archive shards -> long frame.
+
+    The score is scores[].value, which every benchmark carries. Earlier versions
+    read TruthfulQA's extra_artifacts.label instead, which worked only for
+    TruthfulQA -- gpqa scores under chain_of_thought_correctness with no
+    artifacts at all. On TruthfulQA the two agree exactly (truthful<->1.0,
+    untruthful<->0.0), so nothing that used the old path changed.
+
+    metric=None selects the split's most common metric and says which.
+    """
+    d = read_split(split, columns=["response_id", "model", "scores"])
     rows = []
     for rid, mo, sc in zip(d.response_id, d.model, d.scores):
         try:
             met = sc["metric"][0]
-            ea = met["extra_artifacts"]
+            val = float(sc["value"][0])
+        except Exception:
+            continue
+        ea = met.get("extra_artifacts") or {}
+        try:
             a = dict(zip(list(ea["type"]), list(ea["content"])))
         except Exception:
-            met, a = {"name": None}, {}
+            a = {}
         rows.append(("_".join(rid.split("_")[:3]), mo["name"], met["name"],
-                     a.get("label"), a.get("informative"), None))
+                     val, a.get("informative"), None))
     df = pd.DataFrame(rows, columns=["item_id", "model", "metric",
-                                     "label", "second", "capability"])
-    df = df[df.metric == metric].dropna(subset=["label"])
-    df["score"] = (df.label == "truthful").astype(float)
+                                     "score", "second", "capability"])
+    if df.empty:
+        raise SystemExit(f"{split}: no scored responses found")
+    if metric is None:
+        metric = df.metric.value_counts().idxmax()
+        others = df.metric.nunique() - 1
+        print(f"metric: {metric}" + (f"  ({others} other metric(s) in this split, "
+                                     "ignored -- name one with --metric)" if others else ""),
+              file=sys.stderr)
+    df = df[df.metric == metric]
+    if df.empty:
+        raise SystemExit(f"{split}: no responses scored under metric '{metric}'")
     df["second_val"] = (df.second == "true").astype(float)
     return df
 
@@ -278,7 +319,8 @@ def main():
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--split", help="OpenEval archive split, e.g. truthfulqa")
     src.add_argument("--records", help="path to OpenEval records (JSONL)")
-    ap.add_argument("--metric", default="bleurt-20", help="archive metric to select")
+    ap.add_argument("--metric", help="archive metric to select "
+                                     "(default: the split's most common)")
     ap.add_argument("--facet", help="item field to split on, e.g. is_adversarial or "
                                     "category (archive splits only)")
     a = ap.parse_args()

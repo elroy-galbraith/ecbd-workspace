@@ -118,10 +118,9 @@ def validate_file(path):
 
 def validate_split(split):
     """Archive splits validated on ingest; report analysis-field coverage."""
-    import pandas as pd
-    from item_analysis import fetch_split
+    from item_analysis import read_split
 
-    d = pd.read_parquet(fetch_split(split))
+    d = read_split(split)
     n = len(d)
     items = {"_".join(r.split("_")[:3]) for r in d.response_id}
     models = {m["name"] for m in d.model}
