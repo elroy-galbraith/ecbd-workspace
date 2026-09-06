@@ -149,6 +149,52 @@ def traceability(df, piv, disc):
                                       "non_discriminating"])
 
 
+def diagnose(st):
+    """Which conditions fired. Remedies live in _shared/interpreting-item-analysis.md.
+
+    Returns (name, one-line so-what). The one-liner is a label, not the advice --
+    keeping remedies out of the tool means they can be edited without touching code.
+    Thresholds are classical test theory conventions; see the reference.
+    """
+    d, out = st, []
+    if d.get("n_models", 0) < MIN_MODELS_DISCRIM:
+        out.append(("thin-matrix",
+                    f"{d['n_models']} models: discrimination, reliability and "
+                    "stability cannot be estimated"))
+    if d.get("disc_le0") is not None and (d["disc_le0"] > 0.25 or d["disc_lt1"] > 0.40):
+        out.append(("low-discrimination",
+                    f"{100*d['disc_lt1']:.1f}% of items barely separate models; "
+                    f"{d['n_disc_le0']} separate none"))
+    if d.get("kr20") is not None:
+        if d["kr20"] >= 0.8 and d["disc_mean"] < 0.15:
+            out.append(("reliability-from-length",
+                        f"KR-20 {d['kr20']:.3f} rests on item count, not item quality"))
+        if d["kr20"] < 0.7:
+            out.append(("unreliable-scale",
+                        f"KR-20 {d['kr20']:.3f}: the items are not one coherent measure"))
+    if d.get("gap") is not None and d.get("median_adj") is not None and d["median_adj"] > 0:
+        if d["gap"] > 5 * d["median_adj"]:
+            out.append(("unresolvable-ranking",
+                        f"gap needed {100*d['gap']:.1f}pts, median observed "
+                        f"{100*d['median_adj']:.2f}pts: adjacent ranks are not separable"))
+    if d.get("swap") is not None and (d["swap"] > 0.15 or d["rho"] < 0.85):
+        out.append(("unstable-ranking",
+                    f"the two halves swap {100*d['swap']:.1f}% of model pairs"))
+    if d.get("ceiling", 0) > 0.20:
+        out.append(("saturated", f"{100*d['ceiling']:.1f}% of items are at ceiling"))
+    if d.get("floor", 0) > 0.20:
+        out.append(("floored", f"{100*d['floor']:.1f}% of items are at floor"))
+    if d.get("second_r") is not None and d["second_r"] < -0.5 and d["second_p"] < 0.05:
+        out.append(("gameable-primary",
+                    "models low on the second construct rank far above their merit "
+                    "on the primary score alone"))
+    for cap in d.get("weak_caps", []):
+        out.append(("capability-unmeasured",
+                    f"'{cap}': its items do not discriminate, so the eval claims it "
+                    "and provides no evidence about it"))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -202,11 +248,47 @@ def main():
         print("second construct: SKIPPED (absent, or no variation across models)")
 
     tr = traceability(df, piv, disc)
+    weak = []
     if tr is not None:
         print("\ntraceability by capability:")
-        print(tr.to_string(index=False))
+        if n_models < MIN_MODELS_DISCRIM:
+            # discrimination is not estimable here; printing it would imply it is
+            print(tr[["capability", "items"]].to_string(index=False))
+            print(f"  (discrimination per capability needs >= {MIN_MODELS_DISCRIM} "
+                  f"models, have {n_models})")
+        else:
+            print(tr.to_string(index=False))
+            weak = [r.capability for r in tr.itertuples()
+                    if (r.mean_discrimination or 0) < 0.05
+                    or (r.items and r.non_discriminating / r.items > 0.5)]
     else:
         print("traceability: SKIPPED (no ecbd_capability tags in records)")
+
+    st = {"n_models": n_models, "n_items": n_items, "weak_caps": weak,
+          "ceiling": float((diff > 0.95).mean()), "floor": float((diff < 0.05).mean())}
+    if n_models >= MIN_MODELS_DISCRIM:
+        st.update(kr20=kr20, disc_mean=float(disc.mean()),
+                  disc_le0=float((disc <= 0).mean()),
+                  disc_lt1=float((disc < 0.1).mean()),
+                  n_disc_le0=int((disc <= 0).sum()))
+    if n_models >= MIN_MODELS_STABILITY:
+        st.update(rho=rho, swap=swap)
+    if n_items >= MIN_ITEMS_GAP:
+        st.update(gap=2 * 1.96 * se, median_adj=float(np.median(gaps)))
+    if sec:
+        st.update(second_r=r, second_p=p)
+
+    fired = diagnose(st)
+    print()
+    if fired:
+        print("DIAGNOSIS  (remedies: _shared/interpreting-item-analysis.md)")
+        w = max(len(n) for n, _ in fired)
+        for name, why in fired:
+            print(f"  {name:<{w}}  {why}")
+    else:
+        print("DIAGNOSIS  nothing fired: the instrument discriminates, ranks stably")
+        print("           and is not obviously gameable. That says nothing about")
+        print("           whether the construct is well defined -- see the worksheet.")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ The "Loaded by" column reflects what the stage contracts actually list, checked 
 |---|---|---|
 | `worksheet-questions.md` | you need the exact wording of Q1–Q20 | design 1–7, audit 1–5 |
 | `validity-evidence.md` | you are answering or grading a SUPPORT question | design 2–7, audit 3–6, measure 3–4 |
+| `interpreting-item-analysis.md` | an item analysis came back and you need to say what it means | measure 3 |
 | `ecbd-framework.md` | you need what a module is for, how the pieces connect, and what ECBD does not cover | design 1 and 7, audit 1, 2 and 6 |
 | `capability-conventions.md` | you are defining or assessing capabilities | design 2, audit 3 |
 | `failure-modes.md` | you are synthesising findings or reviewing validity | design 7, audit 4 and 6 |

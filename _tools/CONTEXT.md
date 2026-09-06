@@ -4,7 +4,7 @@ Factory, not product. Code that computes validity evidence, stable across runs, 
 
 | File | What it does | Used by |
 |---|---|---|
-| `item_analysis.py` | Classical Test Theory over OpenEval item-level data: item difficulty and discrimination, KR-20 reliability, split-half ranking stability, and the second-construct rank-penalty test | measure stage 3; audit stage 5 |
+| `item_analysis.py` | Classical Test Theory over OpenEval item-level data: item difficulty and discrimination, KR-20 reliability, split-half ranking stability, and the second-construct rank-penalty test. Closes with a `DIAGNOSIS` block naming which conditions fired; the remedies live in `_shared/interpreting-item-analysis.md` so they can be edited without touching code | measure stage 3 |
 | `validate.py` | Checks OpenEval records — structural soundness, and coverage of the fields the analysis depends on. Reports which statistics the matrix supports, so you learn that before stage 3 rather than during it. Does not reimplement upstream `validator.py`, which is what you run before releasing | measure stages 1 and 2 |
 
 ## Why this exists

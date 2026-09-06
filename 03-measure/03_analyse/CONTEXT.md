@@ -8,6 +8,7 @@ One job: produce the psychometric evidence, and state plainly what the matrix ca
 - Working (this run): `01_intake.md` — for the claimed capabilities and the matrix shape
 - Reference (every run): ../../_tools/CONTEXT.md
 - Reference (every run): ../../_shared/validity-evidence.md
+- Reference (every run): ../../_shared/interpreting-item-analysis.md — the remedies keyed to what fired
 
 Do NOT load: the originating run's findings or register. Compute first, compare at stage 4. Reading the conclusion before running the numbers is how an analysis comes to confirm what someone hoped.
 
@@ -18,8 +19,9 @@ Do NOT load: the originating run's findings or register. Compute first, compare 
 4. Compute the **separating gap** — the score difference two models need before their ordering is supported — and compare it to the gaps actually observed. This is the most decision-relevant number the pipeline produces.
 5. **Run the traceability check.** The tool reports it per capability when `ecbd_capability` tags are present. Confirm every capability from `01_intake.md` appears, and that its items discriminate. A capability whose items do not discriminate is measured in name only; one absent from the table is not measured at all.
 6. Where a second construct is present in `extra_artifacts`, test the trade-off between it and the primary score.
-7. State what is **not** computable from this matrix, and what data would make it so.
-8. Tick this stage's row in `RUN.md` and set `status: in-progress` if it is still `intake`. The tick means the output is written and ready for the human check below, not that it passed.
+7. **Write the interpretation, not just the numbers.** For each condition in the tool's `DIAGNOSIS` block, take the entry of the same name from `interpreting-item-analysis.md` and say what it means *here* — what to try if this eval is yours, what to do if it is not, and the trap named there. A reader who is not a psychometrician should finish this section knowing what to change.
+8. State what is **not** computable from this matrix, and what data would make it so.
+9. Tick this stage's row in `RUN.md` and set `status: in-progress` if it is still `intake`. The tick means the output is written and ready for the human check below, not that it passed.
 
 ## Outputs
 - `03_analysis.md` → the run folder

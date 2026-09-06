@@ -53,6 +53,17 @@ Where `extra_artifacts` carries another construct, the relationship between it a
 
 [ANSWER HERE]
 
+## Diagnosis
+
+Conditions the tool reported, and what each means here. Remedies: `_shared/interpreting-item-analysis.md`.
+
+| Condition | What it means for this eval | If you own it | If you don't |
+|---|---|---|---|
+
+Traps worth stating explicitly, from the entries above:
+
+[ANSWER HERE]
+
 ## Not computable from this matrix
 And what data would make it so.
 
