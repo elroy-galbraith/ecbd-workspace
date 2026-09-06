@@ -8,7 +8,8 @@ One folder per run. Both pipelines write here; nothing else does.
 worksheets/
 ├─ _index/log.md                    the catalog — one line per run
 ├─ design-<slug>/                   from _templates/design-run/
-└─ audit-<slug>/                    from _templates/audit-run/
+├─ audit-<slug>/                    from _templates/audit-run/
+└─ measure-<slug>/                  from _templates/measure-run/
 ```
 
 A new run is a **copy of a template**, not a blank page. The template is the schema.
@@ -29,9 +30,11 @@ This is the authority for these values. `RUN.md` frontmatter carries them and po
 |---|---|---|
 | `intake` | the folder exists, the first stage has not finished | the template, on copy |
 | `in-progress` | at least one stage has written its output | every stage's closing step, until a terminal stage moves it on |
-| `review` | the worksheet is written and awaiting a human gate | design stage 7's human check; audit stage 6, before the second reader |
-| `complete` | the final human gate passed | the human check of design stage 8 / audit stage 6 — never a Process step, because a gate is a person |
+| `review` | the worksheet is written and awaiting a human gate | design stage 7's human check; audit stage 6, before the second reader; measure stage 4 |
+| `complete` | the final human gate passed | the human check of design stage 8 / audit stage 6 / measure stage 4 — never a Process step, because a gate is a person |
 | `archived` | superseded, abandoned, or about a version no longer in use | a person, deliberately — no stage sets this. Say why in the run's title line and leave the record in place; archiving is a label, not a deletion |
+
+**Reopening.** A `complete` run returns to `review` when new evidence arrives — typically from a measure run writing into it. Only a person does that. A measure stage may append evidence and add a loop-back row; moving the run out of `complete` is a gate, and gates are people.
 
 ## Records are not version-controlled
 

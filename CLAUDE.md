@@ -10,6 +10,7 @@ Built on ICM: folders carry sequencing, hierarchy carries context, files carry s
 |---|---|
 | `01-design/` | pipeline: design a new eval, eight stages, ends in runnable artefacts |
 | `02-audit/` | pipeline: analyse an existing benchmark, six stages, ends in findings |
+| `03-measure/` | pipeline: turn item-level responses into validity evidence, four stages |
 | `_shared/` | factory: the framework, the 20 questions, the glossary, the rules |
 | `_templates/` | blank run folders — a new run is a copy, not a blank page |
 | `_tools/` | runnable analysis over item-level data; the only code here |
@@ -24,6 +25,8 @@ Built on ICM: folders carry sequencing, hierarchy carries context, files carry s
 |---|---|---|
 | designing a new eval | `01-design/CONTEXT.md` | the stage's human check |
 | analysing someone else's benchmark | `02-audit/CONTEXT.md` | the stage's human check |
+| you have responses and need evidence | `03-measure/CONTEXT.md` | the stage's human check |
+| a SUPPORT question is stuck at `none` | `03-measure/CONTEXT.md` | the stage's human check |
 | auditing an eval built here | `02-audit/CONTEXT.md`, sources = its own record | the stage's human check |
 | mid-run, stage N approved | stage N+1's `CONTEXT.md` | the stage's human check |
 | asked for status | `worksheets/_index/log.md`, then each run's `RUN.md` | report what exists and how far it got |

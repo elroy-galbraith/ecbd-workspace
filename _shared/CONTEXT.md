@@ -7,13 +7,15 @@ The "Loaded by" column reflects what the stage contracts actually list, checked 
 | File | Read it when | Loaded by |
 |---|---|---|
 | `worksheet-questions.md` | you need the exact wording of Q1–Q20 | design 1–7, audit 1–5 |
-| `validity-evidence.md` | you are answering or grading a SUPPORT question | design 2–7, audit 3–6 |
+| `validity-evidence.md` | you are answering or grading a SUPPORT question | design 2–7, audit 3–6, measure 3–4 |
 | `ecbd-framework.md` | you need what a module is for, how the pieces connect, and what ECBD does not cover | design 1 and 7, audit 1, 2 and 6 |
 | `capability-conventions.md` | you are defining or assessing capabilities | design 2, audit 3 |
 | `failure-modes.md` | you are synthesising findings or reviewing validity | design 7, audit 4 and 6 |
 | `audit-method.md` | you are answering any question in an audit | audit 1–6 |
+| `openeval-schema.md` | you are reading or writing item-level records | measure 1, 2, 4 |
+| `results-contract.md` | you need to know what a runner must emit | design 8, measure 1 and 2 |
 | `glossary.md` | a term is ambiguous — capability vs capability evidence, response vs result | nothing; read on demand, by anyone |
-| `house-context.md` | it exists — team defaults from `setup/`; absent until `setup/` is run | design 1–8; audit 6 |
+| `house-context.md` | it exists — team defaults from `setup/`; absent until `setup/` is run | design 1–8; audit 6; measure 4 |
 | `source/ECBD.pdf` | never, during a run | nothing |
 
 ## Why the PDF is not a reference

@@ -8,12 +8,13 @@ The premise: a benchmark is a measurement instrument, not a dataset. The questio
 
 ## What's in the box
 
-Two pipelines over one shared framework:
+Three pipelines over one shared framework:
 
 - **[01-design/](01-design/CONTEXT.md)** — eight stages taking a fuzzy "we need to measure X" to a justified eval design *plus the runnable eval it justifies*: items, prompts, scorer, aggregator.
 - **[02-audit/](02-audit/CONTEXT.md)** — six stages taking a benchmark someone else built to a findings report and a fitness verdict for a use you name.
+- **[03-measure/](03-measure/CONTEXT.md)** — four stages turning item-level responses into validity evidence, written back into the run that needed it. This is what turns a SUPPORT question from `none` into a measurement.
 
-Both walk the same twenty questions. Every run becomes one folder in `worksheets/`.
+The first two walk the same twenty questions. Every run becomes one folder in `worksheets/`.
 
 ### Maturity, stated honestly
 
@@ -21,7 +22,8 @@ Both walk the same twenty questions. Every run becomes one folder in `worksheets
 |---|---|
 | `02-audit/` | **Proven.** Run end to end on TruthfulQA, including item-level psychometrics. Two loop-backs, both caught real errors. |
 | `01-design/` | **Scaffolded, never run.** Contracts have survived three adversarial cold-agent walk-throughs and zero real use. It is the harder half — it makes decisions rather than reading them — so expect loop-backs the audit line did not need. |
-| `_tools/` | **Working, narrow.** Assumes OpenEval's `bleurt-20` record shape; other benchmarks need their own accessor. |
+| `03-measure/` | **Scaffolded, never run as a pipeline.** Its contracts are derived from analysis that worked — `audit-truthfulqa` ran it inline from audit stage 5 — but no `measure-` run exists. The emit path additionally waits on `01-design/` producing a build. |
+| `_tools/` | **Working, narrow.** `item_analysis.py` assumes OpenEval's `bleurt-20` record shape; other benchmarks need their own accessor. |
 
 ## What this actually gives you
 
@@ -41,8 +43,8 @@ The same run also found TruthfulQA to be *better designed* than all three benchm
 
 ## What it cannot do yet
 
-- **Emit** OpenEval-conformant data from evals designed here — that is `03-measure/`, approved and recorded in [docs/decisions/](docs/decisions/).
-- **Execute** an eval. `01-design/` ends at a runnable build; nothing runs it.
+- **Execute** an eval. `01-design/` ends at a runnable build and `03-measure/` starts from results; nothing in between runs the models. That is deliberate — running evals means credentials, spend, rate limits and caching, and every team already has a harness. Wire yours in through [_shared/results-contract.md](_shared/results-contract.md).
+- **Prove the emit path.** `03-measure/` can emit OpenEval records, but no design run has produced a build to emit from.
 - **Generalise the analysis** beyond OpenEval's `bleurt-20` record shape.
 - **Clear commercial use** of archive data. OpenEval is CC-BY-NC-4.0; unresolved.
 

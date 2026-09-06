@@ -1,6 +1,6 @@
 # The workspace in one screen
 
-Two pipelines over one framework. Both walk the same twenty questions ([_shared/worksheet-questions.md](_shared/worksheet-questions.md)); they differ in what the answers are *for*.
+Three pipelines over one framework. The first two walk the same twenty questions ([_shared/worksheet-questions.md](_shared/worksheet-questions.md)); they differ in what the answers are *for*.
 
 ```
                       _shared/  (framework, questions, glossary, rules)
@@ -17,7 +17,7 @@ Two pipelines over one framework. Both walk the same twenty questions ([_shared/
                     one record per run
 ```
 
-## The two lines
+## The three lines
 
 **`01-design/` — you are deciding.** Eight stages: one per ECBD boundary, plus a validity synthesis and a build step. Fine-grained on purpose, because each stage constrains everything downstream and correction is cheapest early — a capability definition fixed at stage 2 costs a conversation; the same fix after items are written costs the item pool.
 
@@ -31,7 +31,7 @@ Stages hold contracts and references only. **All run artefacts live in `workshee
 
 ## The one piece of code
 
-`_tools/` holds analysis that computes validity evidence from item-level benchmark data. It is factory, not product: stable across runs, cited by worksheets, never edited during one. It arrived from a real run rather than by design, and it is the prototype of a third pipeline recorded in `docs/decisions/`.
+`_tools/` holds analysis that computes validity evidence from item-level benchmark data, and the validator that gets results into shape for it. Factory, not product: stable across runs, cited by worksheets, never edited during one. It arrived from a real run rather than by design, which is why `03-measure/` formalises something that worked rather than something imagined.
 
 ## Status is derivable
 
@@ -41,7 +41,7 @@ The five lifecycle values and who sets each are defined once, in `worksheets/CON
 
 ## Naming
 
-Run slugs are kebab-case, prefixed by mode: `design-medical-summary-faithfulness`, `audit-mmlu`. Each pipeline's first stage restates this, so a mid-run agent never needs this file. The slug is the folder name, the log id, and the record's identity everywhere.
+Run slugs are kebab-case, prefixed by mode: `design-medical-summary-faithfulness`, `audit-mmlu`, `measure-truthfulqa`. Each pipeline's first stage restates this, so a mid-run agent never needs this file. The slug is the folder name, the log id, and the record's identity everywhere.
 
 ## What this workspace does not do
 

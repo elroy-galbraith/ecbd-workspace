@@ -22,6 +22,8 @@ build/
 
 **The scorer is separable from the aggregator.** Extraction and accumulation are distinct decisions with distinct justifications. Fusing them into one function makes it impossible to change one and re-justify only that one.
 
+**Results conform to the ingest contract.** Whatever runs this eval must emit rows matching `_shared/results-contract.md` — one row per response, carrying the rendered prompt and the generation parameters actually used. This is what lets `03-measure/` turn a SUPPORT gap into a measurement later.
+
 **The caveat travels with the number.** The supported-interpretation sentence from the validity register appears in `README.md` and in the results output. A score that escapes its worksheet becomes precedent for someone else's benchmark.
 
 ## Traceability table

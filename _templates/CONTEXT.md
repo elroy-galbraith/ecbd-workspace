@@ -6,6 +6,7 @@ Blank starters. A new run is a copy of one of these, never a blank page — the 
 |---|---|---|
 | `design-run/` | `worksheets/design-<slug>/` | `01-design/` |
 | `audit-run/` | `worksheets/audit-<slug>/` | `02-audit/` |
+| `measure-run/` | `worksheets/measure-<slug>/` | `03-measure/` |
 
 ## Changing a template
 

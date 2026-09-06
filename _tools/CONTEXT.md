@@ -4,18 +4,20 @@ Factory, not product. Code that computes validity evidence, stable across runs, 
 
 | File | What it does | Used by |
 |---|---|---|
-| `item_analysis.py` | Classical Test Theory over OpenEval item-level data: item difficulty and discrimination, KR-20 reliability, split-half ranking stability, and the truthfulness/informativeness rank-penalty test | audit stage 5, on benchmarks with archive coverage |
+| `item_analysis.py` | Classical Test Theory over OpenEval item-level data: item difficulty and discrimination, KR-20 reliability, split-half ranking stability, and the second-construct rank-penalty test | measure stage 3; audit stage 5 |
+| `conform.py` | Validates a results file and maps it into OpenEval records. Detects whether the input is flat contract rows or already-conformed records and checks accordingly. Every run reports which statistics the matrix will support, so you learn that before stage 3 rather than during it | measure stages 1 and 2 |
 
 ## Why this exists
 
 Until now the workspace was markdown with no dependencies. This is the first code in it, and it arrived the way the method prefers — written to answer a real question in a real run (`audit-truthfulqa`), not designed in advance.
 
-It is the working prototype of `03-measure/`, whose design is recorded in [../docs/decisions/2026-09-06-openeval-integration.md](../docs/decisions/2026-09-06-openeval-integration.md) and deliberately deferred. Treat it as evidence about what that pipeline should be, not as that pipeline.
+`item_analysis.py` began as the prototype for `03-measure/`, which now exists. Design and reasoning: [../docs/decisions/2026-09-06-openeval-integration.md](../docs/decisions/2026-09-06-openeval-integration.md).
 
 ## Running it
 
 ```
 python _tools/item_analysis.py truthfulqa
+python _tools/conform.py --check results.jsonl
 ```
 
 Downloads the split to a cache directory on first run (~100 MB for TruthfulQA), then prints the statistics. Requires `pandas`, `pyarrow`, `numpy`, `scipy` — nothing beyond a normal scientific Python install.
