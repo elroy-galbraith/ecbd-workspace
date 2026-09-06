@@ -10,7 +10,7 @@ because a default here silently analyses the wrong benchmark:
     python _tools/item_analysis.py --split truthfulqa          # OpenEval archive
     python _tools/item_analysis.py --records worksheets/measure-x/records/items.jsonl
 
-Thresholds are shared with conform.py so stage 2 and stage 3 agree about what a
+Thresholds are shared with validate.py so stage 2 and stage 3 agree about what a
 matrix can support. Below them the statistic is skipped, not fudged.
 
 Archive data is CC-BY-NC-4.0 (non-commercial). Archive labels are one scoring
@@ -66,7 +66,7 @@ def from_split(split, metric="bleurt-20"):
 
 
 def from_records(path):
-    """Nested OpenEval records (conform.py output) -> long frame."""
+    """Nested OpenEval records (validate.py accepts the same shape) -> long frame."""
     rows = []
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         if not line.strip():
@@ -154,7 +154,7 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--split", help="OpenEval archive split, e.g. truthfulqa")
-    src.add_argument("--records", help="path to conformed items.jsonl")
+    src.add_argument("--records", help="path to OpenEval records (JSONL)")
     ap.add_argument("--metric", default="bleurt-20", help="archive metric to select")
     a = ap.parse_args()
 

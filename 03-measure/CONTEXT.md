@@ -13,25 +13,25 @@ Measuring is a different job from designing or reading, and it needs data neithe
 | # | Stage | Writes to the run folder |
 |---|---|---|
 | 01 | `01_intake` | `01_intake.md` |
-| 02 | `02_conform` | `02_conform.md`, `records/` |
+| 02 | `02_validate` | `02_validate.md`, `records/` |
 | 03 | `03_analyse` | `03_analysis.md` |
 | 04 | `04_report-back` | `04_report-back.md`, `release/` |
 
 ## Two directions, one pipeline
 
-**Consume** — an audited benchmark has OpenEval coverage. Stage 1 names the split, stage 2 is mostly validation, stage 4 writes evidence into an audit run.
+**Consume** — an audited benchmark has OpenEval coverage. Stage 1 names the split, stage 2 checks it will bear the analysis, stage 4 writes evidence into an audit run.
 
-**Emit** — an eval designed here has been run by your harness. Stage 1 names the results file, stage 2 conforms it, stage 4 also assembles a release bundle.
+**Emit** — an eval designed here has been run by your harness, which emitted OpenEval records. Stage 1 names the file, stage 2 validates it, stage 4 also assembles a release bundle.
 
 ## Maturity
 
 **Consume: proven.** `measure-truthfulqa` ran all four stages end to end. It found two defects in these contracts — both fixed — and revised two strength labels in the audit it serves.
 
-**Emit: unproven.** It waits on `01-design/` producing a build, and on that build conforming to the results contract. Expect loop-backs.
+**Emit: unproven.** It waits on `01-design/` producing a build, and on that build emitting OpenEval records. Expect loop-backs.
 
 ## This line does not run evals
 
-`01-design/` ends at a runnable build; something else executes it. Results arrive through [../_shared/results-contract.md](../_shared/results-contract.md). That scope decision and its reasoning are in `docs/decisions/2026-09-06-openeval-integration.md`.
+`01-design/` ends at a runnable build; something else executes it and hands back **OpenEval records** — the only format accepted, per [../_shared/openeval-schema.md](../_shared/openeval-schema.md). If your harness emits rows, the adapter that nests them is yours. Both decisions are recorded in `docs/decisions/`.
 
 ## Starting a run
 

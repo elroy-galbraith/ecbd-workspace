@@ -1,6 +1,6 @@
 # Intake
 
-Stage: `03-measure/01_intake`. Contract: `_shared/results-contract.md`. Schema: `_shared/openeval-schema.md`.
+Stage: `03-measure/01_intake`. Contract: `_shared/openeval-schema.md`. Schema: `_shared/openeval-schema.md`.
 
 ## What is being measured
 [ANSWER HERE]
@@ -31,7 +31,7 @@ An identifier a stranger could resolve: archive split and retrieval date, or res
 | Metrics present | |
 
 ## What this matrix can and cannot support
-Follow the guidance in `results-contract.md`. Naming the limits here is cheaper than discovering them at stage 3.
+Follow the guidance in `openeval-schema.md`. Naming the limits here is cheaper than discovering them at stage 3.
 
 | Statistic | Supported? | Why |
 |---|---|---|

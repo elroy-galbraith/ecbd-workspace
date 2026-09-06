@@ -23,7 +23,7 @@ Tick a row when that stage has written its output and handed it to the human che
 | File | Stage | Done |
 |---|---|---|
 | `01_intake.md` | 01 | [ ] |
-| `02_conform.md` + `records/` | 02 | [ ] |
+| `02_validate.md` + `records/` | 02 | [ ] |
 | `03_analysis.md` | 03 | [ ] |
 | `04_report-back.md` | 04 | [ ] |
 

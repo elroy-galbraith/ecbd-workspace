@@ -50,7 +50,7 @@ Implementation waits until one real run has gone through an existing line. The m
 
 ## Implemented
 
-`03-measure/` exists: four stages, `_shared/openeval-schema.md`, `_shared/results-contract.md`, `_tools/conform.py`, and `_templates/measure-run/`.
+`03-measure/` exists: four stages, `_shared/openeval-schema.md`, `_shared/openeval-schema.md`, `_tools/validate.py`, and `_templates/measure-run/`.
 
 **Neither direction has been run through the stages.** `audit-truthfulqa` invoked the analysis inline from audit stage 5, before this pipeline existed; the log holds no `measure-` row. The contracts are derived from work that succeeded, which is not the same as work that has been repeated.
 

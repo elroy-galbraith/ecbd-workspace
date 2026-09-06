@@ -1,9 +1,9 @@
-# Conform
+# Validate
 
-Stage: `03-measure/02_conform`. Schema: `_shared/openeval-schema.md`.
+Stage: `03-measure/02_validate`. Schema: `_shared/openeval-schema.md`.
 
 ## What was done
-Consume (validated as received) or emit (mapped from a results file). Record the exact command.
+Record the exact command and which source it named.
 
 [ANSWER HERE]
 
@@ -11,7 +11,7 @@ Consume (validated as received) or emit (mapped from a results file). Record the
 [ANSWER HERE]
 
 ## Capability tags
-Where ECBD capability names were carried, using the `extra_artifacts` convention. **These tags are a local convention, not part of the OpenEval standard.**
+Whether `ecbd_capability` tags are present. **The convention is this workspace's, not part of the OpenEval standard** — archive records will not carry it.
 
 [ANSWER HERE]
 

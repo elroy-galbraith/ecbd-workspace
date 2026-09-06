@@ -5,7 +5,7 @@ Factory, not product. Code that computes validity evidence, stable across runs, 
 | File | What it does | Used by |
 |---|---|---|
 | `item_analysis.py` | Classical Test Theory over OpenEval item-level data: item difficulty and discrimination, KR-20 reliability, split-half ranking stability, and the second-construct rank-penalty test | measure stage 3; audit stage 5 |
-| `conform.py` | Validates a results file and maps it into OpenEval records. Detects whether the input is flat contract rows or already-conformed records and checks accordingly. Every run reports which statistics the matrix will support, so you learn that before stage 3 rather than during it | measure stages 1 and 2 |
+| `validate.py` | Checks OpenEval records — structural soundness, and coverage of the fields the analysis depends on. Reports which statistics the matrix supports, so you learn that before stage 3 rather than during it. Does not reimplement upstream `validator.py`, which is what you run before releasing | measure stages 1 and 2 |
 
 ## Why this exists
 
@@ -17,7 +17,8 @@ Until now the workspace was markdown with no dependencies. This is the first cod
 
 ```
 python _tools/item_analysis.py truthfulqa
-python _tools/conform.py --check results.jsonl
+python _tools/validate.py records.jsonl
+python _tools/validate.py --split truthfulqa
 ```
 
 Downloads the split to a cache directory on first run (~100 MB for TruthfulQA), then prints the statistics. Requires `pandas`, `pyarrow`, `numpy`, `scipy` — nothing beyond a normal scientific Python install.

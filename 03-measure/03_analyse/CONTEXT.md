@@ -4,7 +4,7 @@ One job: produce the psychometric evidence, and state plainly what the matrix ca
 
 ## Inputs
 - Working (this run): `RUN.md` — the run's state, stage table and loop-back table; this stage updates it
-- Working (this run): `02_conform.md` and the run's `records/`
+- Working (this run): `02_validate.md` and the run's `records/`
 - Working (this run): `01_intake.md` — for the claimed capabilities and the matrix shape
 - Reference (every run): ../../_tools/CONTEXT.md
 - Reference (every run): ../../_shared/validity-evidence.md
@@ -12,7 +12,7 @@ One job: produce the psychometric evidence, and state plainly what the matrix ca
 Do NOT load: the originating run's findings or register. Compute first, compare at stage 4. Reading the conclusion before running the numbers is how an analysis comes to confirm what someone hoped.
 
 ## Process
-1. Run the analysis, naming the source explicitly — `--records <path>` for a conformed file, `--split <name>` for an archive split. The tool refuses to guess. Record the exact command and its output verbatim.
+1. Run the analysis, naming the source explicitly — `--records <path>` for local records, `--split <name>` for an archive split. The tool refuses to guess. Record the exact command and its output verbatim.
 2. Report item difficulty and discrimination, and KR-20 reliability. Say how many items fail to discriminate.
 3. Report ranking stability: split-half rank correlation, and how often a model pair swaps order between halves. The tool prints `SKIPPED` with the reason where the matrix is too small — record that verbatim rather than reaching for a number that cannot bear weight.
 4. Compute the **separating gap** — the score difference two models need before their ordering is supported — and compare it to the gaps actually observed. This is the most decision-relevant number the pipeline produces.

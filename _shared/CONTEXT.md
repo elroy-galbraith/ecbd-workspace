@@ -12,8 +12,8 @@ The "Loaded by" column reflects what the stage contracts actually list, checked 
 | `capability-conventions.md` | you are defining or assessing capabilities | design 2, audit 3 |
 | `failure-modes.md` | you are synthesising findings or reviewing validity | design 7, audit 4 and 6 |
 | `audit-method.md` | you are answering any question in an audit | audit 1–6 |
-| `openeval-schema.md` | you are reading or writing item-level records | measure 1, 2, 4 |
-| `results-contract.md` | you need to know what a runner must emit | design 8, measure 1 and 2 |
+| `openeval-schema.md` | you are reading or writing item-level records — the only accepted format | design 8, measure 1, 2 and 4 |
+
 | `glossary.md` | a term is ambiguous — capability vs capability evidence, response vs result | nothing; read on demand, by anyone |
 | `house-context.md` | it exists — team defaults from `setup/`; absent until `setup/` is run | design 1–8; audit 6; measure 4 |
 | `source/ECBD.pdf` | never, during a run | nothing |
