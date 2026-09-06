@@ -8,8 +8,4 @@ The catalog: one line per run, added when the run folder is created. It records 
 
 | Slug | Mode | Subject | Opened | Owner |
 |---|---|---|---|---|
-
-<!-- Example rows, delete when the first real run lands:
-| design-support-summary-faithfulness | design | Faithfulness of customer-support summaries | 2026-09-06 | |
-| audit-mmlu | audit | MMLU for legal-research model selection | 2026-09-06 | |
--->
+| audit-truthfulqa | audit | TruthfulQA as a shipping gate for a customer-facing assistant | 2026-09-06 | |
