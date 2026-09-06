@@ -29,6 +29,10 @@ Both lines write into the same record shape, so an eval designed here can be aud
 
 Stages hold contracts and references only. **All run artefacts live in `worksheets/<run-slug>/`**, created at the first stage by copying a template. Two runs never collide, and a run folder read top to bottom is the complete worksheet.
 
+## The one piece of code
+
+`_tools/` holds analysis that computes validity evidence from item-level benchmark data. It is factory, not product: stable across runs, cited by worksheets, never edited during one. It arrived from a real run rather than by design, and it is the prototype of a third pipeline recorded in `docs/decisions/`.
+
 ## Status is derivable
 
 `RUN.md` is the **only** file recording a run's state: `status:` in its frontmatter for the lifecycle, the stage table and loop-back table in its body for how far the run got and where it has been. To report status: read `worksheets/_index/log.md` for what runs exist, then each run's `RUN.md` for how far it got. The log carries no status column, deliberately.

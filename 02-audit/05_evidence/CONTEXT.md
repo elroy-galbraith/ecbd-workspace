@@ -8,6 +8,7 @@ One job: extract evidence extraction and accumulation — Q15 through Q20 — an
 - Working (this run): `04_instrument.md` and `03_capability.md` from the run folder
 - Reference (every run): ../../_shared/worksheet-questions.md (Q15–Q20)
 - Reference (every run): ../../_shared/audit-method.md
+- Reference (if the benchmark has OpenEval coverage): ../../_tools/CONTEXT.md — item-level analysis
 - Reference (every run): ../../_shared/validity-evidence.md
 
 ## Process

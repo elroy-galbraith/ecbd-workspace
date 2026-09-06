@@ -12,6 +12,7 @@ Built on ICM: folders carry sequencing, hierarchy carries context, files carry s
 | `02-audit/` | pipeline: analyse an existing benchmark, six stages, ends in findings |
 | `_shared/` | factory: the framework, the 20 questions, the glossary, the rules |
 | `_templates/` | blank run folders — a new run is a copy, not a blank page |
+| `_tools/` | runnable analysis over item-level data; the only code here |
 | `worksheets/` | product: one folder per run, plus `_index/log.md` |
 | `setup/` | one-time configuration of house context |
 | `CONTEXT.md` | this workspace in one screen — read it once, before your first run |

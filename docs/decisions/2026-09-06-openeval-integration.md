@@ -46,6 +46,10 @@ The design line ends at a *runnable* eval; it never runs one. OpenEval records n
 
 Implementation waits until one real run has gone through an existing line. The method's own guardrail is to build structure for work that is actually repeating; a third pipeline for a loop nobody has closed once is the kind of thing that ossifies wrong.
 
+## Status after the first run
+
+`audit-truthfulqa` ran the consume path end to end and answered all five questions below. The working prototype is `_tools/item_analysis.py`; the evidence it produced is in that run's `05_evidence.md`. Read both before building `03-measure/`.
+
 ## Open questions the first run should answer
 
 1. **Where do capabilities live?** OpenEval has no field for them. ECBD's spine is that every item targets named capabilities and evidence traces back to them. Candidates: `item_adaptation`, `extra_artifacts`, or a documented local extension. The run should show which survives contact with real records.

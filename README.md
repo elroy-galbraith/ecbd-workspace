@@ -32,6 +32,10 @@ Read in this order:
 
 Keep [_shared/glossary.md](_shared/glossary.md) open the first time. ECBD draws distinctions that ordinary usage blurs — *capability* vs *capability evidence*, *response* vs *result* — and the framework's value comes from those distinctions holding.
 
+## The one piece of code
+
+The workspace is markdown with one exception: [_tools/item_analysis.py](_tools/item_analysis.py) computes item difficulty, discrimination, reliability and ranking stability from OpenEval's item-level data. It needs only pandas, pyarrow, numpy and scipy. Audits of benchmarks with archive coverage can answer SUPPORT questions with measurements instead of absence.
+
 ## Setting up for a team
 
 Answer **[setup/questionnaire.md](setup/questionnaire.md)** once. Seven questions about what you evaluate, who reads results, what runner your builds target, and where your bar for validity evidence sits. The answers become `_shared/house-context.md`, which nine stages load.
