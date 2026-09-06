@@ -49,3 +49,9 @@ Read a run folder top to bottom in file-number order and you have the complete w
 ## Cross-referencing
 
 Records link to each other by relative path — an audit of an eval designed here cites that design record, and a design run that borrows a capability definition cites where it came from. One home per fact: cite the definition, do not copy it.
+
+**A run reports its own subject.** Comparing two benchmarks is often the most interesting thing available, and a run record is the wrong place for it. Figures belonging to another run go stale silently: `measure-truthfulqa` was revised on 2026-09-06 and any copy of its numbers taken earlier is now wrong, with nothing to show it.
+
+So: a general lesson drawn from more than one run belongs in `_shared/`, which is where a reader looks for it. A figure quoted from another run carries its source and the date it was read, the way a strength-label reminder carries its authority.
+
+Cross-run synthesis has no home yet. That is a known gap, recorded in `measure-gpqa/03_analysis.md`. Build a synthesis record when a third run makes the need repeat — not before.

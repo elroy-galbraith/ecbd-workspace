@@ -40,7 +40,7 @@ The thresholds come from classical test theory. They are conventions, not laws. 
 
 **What it means.** Two models must differ by more than the scores actually differ. The positions on the leaderboard are not supported by the data.
 
-**Good items do not fix this.** Two benchmarks in this workspace fail to rank, for opposite reasons. TruthfulQA is noisy: half its items hardly separate models, and its two halves disagree about a quarter of model pairs. GPQA is close to ideal. Its mean discrimination is 0.457, its KR-20 is 0.993, and its two halves agree on 95.5% of model pairs. It still cannot separate neighbouring models. With 446 items the standard error is 2.0 points, and the models sit 0.45 points apart.
+**Good items do not fix this.** Two benchmarks in this workspace fail to rank, for opposite reasons. Figures below are read from `worksheets/measure-truthfulqa/` and `worksheets/measure-gpqa/` on 2026-09-07; those runs are the home for them. TruthfulQA is noisy: half its items hardly separate models, and its two halves disagree about a quarter of model pairs. GPQA is close to ideal. Its mean discrimination is 0.457, its KR-20 is 0.993, and its two halves agree on 95.5% of model pairs. It still cannot separate neighbouring models. With 446 items the standard error is 2.0 points, and the models sit 0.45 points apart.
 
 Resolution comes from the item count and the size of the real difference, not from item quality. If you see a high KR-20 and high discrimination, do not conclude that the ranking is safe. Check the separating gap.
 
