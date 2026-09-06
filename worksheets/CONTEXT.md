@@ -33,6 +33,12 @@ This is the authority for these values. `RUN.md` frontmatter carries them and po
 | `complete` | the final human gate passed | the human check of design stage 8 / audit stage 6 — never a Process step, because a gate is a person |
 | `archived` | superseded, abandoned, or about a version no longer in use | a person, deliberately — no stage sets this. Say why in the run's title line and leave the record in place; archiving is a label, not a deletion |
 
+## Records are not version-controlled
+
+`.gitignore` excludes every run folder. Only the scaffold — this file and `_index/log.md` — is committed, because worksheets concern the systems you actually evaluate and often name client work or unreleased models.
+
+Two consequences. A fresh clone gives you a working pipeline and an empty library, which is what you want. And **your runs exist in one place only** — if they matter, they need a backup that is not this repo.
+
 ## Reading a record
 
 Read a run folder top to bottom in file-number order and you have the complete worksheet. That property is why files are numbered and why stages write into the record rather than into their own output folders.

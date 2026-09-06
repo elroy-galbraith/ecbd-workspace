@@ -9,6 +9,13 @@ desktop.ini
 *.swp
 *~
 
-# Nothing else is ignored on purpose.
-# worksheets/ is the product and is version-controlled: a completed worksheet is
-# a record of what was asked at the time, and its history is the point.
+# Run artefacts.
+# Worksheets are the product, and they concern the systems you actually evaluate
+# — often client work or unreleased models. The scaffold stays tracked so a fresh
+# clone is usable; the runs themselves do not leave your machine.
+#
+# Note this keeps worksheets/_index/log.md tracked, which carries one line per run
+# (slug, mode, subject). Keep subjects terse, or ignore the log too if even that
+# is too much: add `worksheets/_index/log.md` below.
+worksheets/*/
+!worksheets/_index/

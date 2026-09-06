@@ -1,4 +1,4 @@
-# eval_designer
+# ecbd-workspace
 
 A workspace for designing evals and auditing benchmarks under **ECBD** — Evidence-Centered Benchmark Design ([Liu et al., ACL 2024](https://aclanthology.org/2024.acl-long.861/)).
 

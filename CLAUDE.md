@@ -1,4 +1,4 @@
-# eval_designer
+# ecbd-workspace
 
 A workspace for designing evals and auditing benchmarks under ECBD — Evidence-Centered Benchmark Design. Each run produces one worksheet record; design runs also produce the runnable eval that worksheet justifies.
 
