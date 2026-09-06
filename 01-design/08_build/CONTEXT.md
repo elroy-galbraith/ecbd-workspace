@@ -29,6 +29,6 @@ Do NOT load: other runs, or superseded revisions of the module files. The run's 
 - `build/` → the run folder
 
 ## Human check
-Run the eval end to end against one object of evaluation and read the output. Confirm the per-capability breakdown is present, and that the reported claim matches the register rather than exceeding it.
+Run the eval from end to end against one object of evaluation, and read the output. Confirm two things. The per-capability results are present. And the reported claim matches the register, rather than exceeding it.
 
 Only then set `RUN.md` status to `complete` and fill `closed:`. If the run fails here, untick stage 8 and add a loop-back row.

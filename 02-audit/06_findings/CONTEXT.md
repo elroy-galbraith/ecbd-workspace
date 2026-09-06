@@ -25,6 +25,6 @@ One job: synthesise the audit into validity threats, a fitness verdict, and usab
 - `06_findings.md` → the run folder
 
 ## Human check
-Have a second reader who did not complete the worksheet examine it against the sources, as the method requires. Resolve disagreements about phrasing and interpretation in the file, not in conversation. Findings that survive a second reader are the ones worth publishing.
+Give the worksheet to a second reader who did not complete it. They examine it against the sources, as the method requires. Resolve any disagreement about wording or interpretation in the file, not in conversation. Findings that survive a second reader are the ones worth publishing.
 
-When they are done: record them in `second_reader:`, tick "Second reader pass complete", set status to `complete` and fill `closed:`. If they send it back, add a loop-back row and untick the stages being redone.
+When they finish: record them in `second_reader:`, tick "Second reader pass complete", set status to `complete`, and fill `closed:`. If they return the run, add a loop-back row and untick the stages you will redo.

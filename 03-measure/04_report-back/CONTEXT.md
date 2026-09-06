@@ -26,8 +26,8 @@ Analysis that stays in its own folder changes nothing. The originating run is wh
 - `release/` → the run folder, emit direction only
 
 ## Human check
-Read the originating run's register again, end to end. It should now say something it could not say before — and where a strength label moved up, confirm the evidence is about the same scoring path that run actually uses.
+Read the originating run's register again, from start to finish. It should now say something it could not say before. Where a strength label improved, confirm the evidence describes the same scoring path that the run uses.
 
-If the originating run was `complete`, set it back to `review` yourself — a reopen is a gate, and gates are people.
+If the originating run was `complete`, set it back to `review` yourself. A reopen is a gate, and a person passes every gate.
 
-Then set this run's status to `complete` and fill `closed:`. For an emit run, do that only after deciding about publication — the trade-off is set out in `docs/decisions/2026-09-06-openeval-integration.md`. The bundle is ready; whether it goes out is your call rather than the pipeline's. Record the decision in `04_report-back.md`.
+Then set this run's status to `complete` and fill `closed:`. For an emit run, decide about publication first. `docs/decisions/2026-09-06-openeval-integration.md` sets out the trade-off. The bundle is ready; you decide whether it goes out, not the pipeline. Record your decision in `04_report-back.md`.

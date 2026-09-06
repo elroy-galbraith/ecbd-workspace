@@ -23,4 +23,4 @@ One job: decide which items from the pool are used, and show the selection gathe
 - selection manifest or script → the run folder's `build/items/`
 
 ## Human check
-Count items per capability from the manifest and compare against the capability list in `02_capability.md`. Any capability with a thin count either gets more items or gets dropped from the claims. Edit in place.
+Count the items for each capability in the manifest. Compare the counts to the capability list in `02_capability.md`. If a capability has too few items, add items or remove the claim. Edit this file directly.

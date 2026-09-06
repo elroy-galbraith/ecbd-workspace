@@ -25,4 +25,4 @@ Three modules, one stage: in practice they are documented together, thinly, and 
 - `04_instrument.md` → the run folder
 
 ## Human check
-Check the capability coverage: could you reproduce the evaluation set from what the sources say? If not, name the missing information precisely — "the selection process for the 1,000-item cap is not described" is a finding, "underdocumented" is not. Edit in place.
+Ask whether you could rebuild the evaluation set from what the sources say. If you cannot, name the missing information exactly. "The sources do not describe how the 1,000 items were selected" is a finding. "Underdocumented" is not. Edit this file directly.

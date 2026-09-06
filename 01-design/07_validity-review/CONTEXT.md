@@ -26,6 +26,6 @@ The stage the paper exists to force. Everything before this describes and justif
 - `07_validity-register.md` → the run folder
 
 ## Human check
-Read the register alone, without the rest of the worksheet, and decide whether you would ship a decision on this eval. If the answer is no, the fix is a loop back to the stage that caused it — most often stage 2 — not a softer register.
+Read the register on its own, without the rest of the worksheet. Then decide: would you make a real decision from this eval? If not, return the run to the stage that caused the problem. That is usually stage 2. Do not weaken the register instead.
 
-Set `RUN.md` status to `review` before handing on. If you send the run back, add a row to the loop-back table in `RUN.md` first: which stage, what forced it, what changed. A run whose register got softer instead of looping back should show that in the table too.
+Set `RUN.md` status to `review` before you pass the run on. If you return the run, first add a row to the loop-back table in `RUN.md`. Record which stage, what forced it, and what changed. If someone weakened the register instead of returning the run, record that too.

@@ -32,6 +32,7 @@ Built on ICM: folders carry sequencing, hierarchy carries context, files carry s
 | asked for status | `worksheets/_index/log.md`, then each run's `RUN.md` | report what exists and how far it got |
 | asked how the two pipelines relate | `CONTEXT.md` | — |
 | asked what a term means | `_shared/glossary.md` | — |
+| writing or editing a human check | `_shared/language.md` | — |
 | first use in a new team or domain | `setup/questionnaire.md` | answers written to `_shared/house-context.md` |
 
 ## Loading discipline

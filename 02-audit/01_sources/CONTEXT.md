@@ -26,4 +26,4 @@ One job: assemble the sources this audit reads, and declare the perspective it i
 - `01_sources.md` → the run folder
 
 ## Human check
-Confirm every source is retrievable by someone else from what you wrote — a URL, a version, a commit. An audit whose sources cannot be re-read cannot be contested, and a finding nobody can contest is not worth much.
+Confirm that another person can retrieve every source from what you wrote. Each one needs a URL, a version, or a commit. Nobody can contest an audit whose sources they cannot read. A finding nobody can contest has little value.

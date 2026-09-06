@@ -25,4 +25,4 @@ The paper's deepest findings live here. Give it its own gate.
 - `03_capability.md` → the run folder
 
 ## Human check
-Pick one capability and try to write a test item for it using only the benchmark's definition. If you cannot tell what would count as passing, the construct is underspecified — and everything downstream in this audit inherits that. Edit in place.
+Choose one capability. Try to write a test item for it, using only the benchmark's own definition. If you cannot tell what a passing answer looks like, the construct is underspecified. Every later stage of this audit inherits that problem. Edit this file directly.

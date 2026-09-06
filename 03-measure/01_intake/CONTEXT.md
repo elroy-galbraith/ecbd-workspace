@@ -26,4 +26,4 @@ Do NOT load: the originating run's full worksheet. This stage needs what the eva
 - `01_intake.md` → the run folder
 
 ## Human check
-Confirm the responses correspond to the eval the originating run describes — same items, same adaptation, same version. Measuring the wrong artefact produces evidence that looks authoritative and is about something else. If they diverge, say how, in the file.
+Confirm the responses match the eval that the originating run describes. Check the items, the adaptation, and the version. If you measure the wrong artefact, the evidence looks authoritative and describes something else. If the two differ, record how in this file.

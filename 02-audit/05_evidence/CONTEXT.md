@@ -23,4 +23,4 @@ One job: extract evidence extraction and accumulation — Q15 through Q20 — an
 - `05_evidence.md` → the run folder
 
 ## Human check
-Take the benchmark's headline number and write the sentence its users actually say about a system that scores well. Compare that sentence against what extraction and accumulation support. The distance between them is the audit's main result. Edit in place.
+Take the benchmark's headline number. Write the sentence its users actually say about a system that scores well. Compare that sentence to what the extraction and accumulation methods support. The difference between the two is the main result of this audit. Edit this file directly.

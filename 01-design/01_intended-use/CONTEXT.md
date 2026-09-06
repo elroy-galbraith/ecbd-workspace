@@ -27,4 +27,4 @@ Do NOT load: other stages' references, prior runs, the source PDF.
 - `01_intended-use.md` → the run folder
 
 ## Human check
-Ask the person who requested the eval: "if this comes back green, what do you do differently?" If the answer is vague, the intended use is not settled and stage 2 will inherit the vagueness. Edit in place — the next stage reads whatever is here.
+Ask the person who requested the eval one question: "if this result is good, what will you do differently?" A vague answer means the intended use is not settled. Stage 2 will then inherit that vagueness. Edit this file directly. The next stage reads whatever you leave here.

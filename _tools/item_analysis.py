@@ -28,20 +28,39 @@ SEED = 20260906
 MIN_MODELS_DISCRIM, MIN_MODELS_STABILITY, MIN_ITEMS_GAP = 20, 40, 100
 MIN_ITEMS_PER_MODEL, COVERAGE = 0.8, 0.8   # both as fractions of the item set
 URL = ("https://huggingface.co/api/datasets/Open-Eval-Commons/OpenEval"
-       "/parquet/response/{split}/0.parquet")
+       "/parquet/{config}/{split}/0.parquet")
 CACHE = Path(__file__).resolve().parent / ".cache"
 
 
 # ---------------------------------------------------------------- loading
 
-def fetch_split(split):
+def fetch_split(split, config="response"):
     """Path to the cached parquet for an archive split, downloading if needed."""
     CACHE.mkdir(exist_ok=True)
-    dest = CACHE / f"{split}_response.parquet"
+    dest = CACHE / f"{split}_{config}.parquet"
     if not dest.exists():
-        print(f"downloading {split} ...", file=sys.stderr)
-        urllib.request.urlretrieve(URL.format(split=split), dest)
+        print(f"downloading {split}/{config} ...", file=sys.stderr)
+        urllib.request.urlretrieve(URL.format(config=config, split=split), dest)
     return dest
+
+
+def item_facets(split, key):
+    """Map item_id -> facet value, read from the archive's item table.
+
+    Benchmarks stash per-item metadata as JSON inside item_content.input, which
+    is legal OpenEval and invisible to the schema. TruthfulQA carries
+    is_adversarial and category there.
+    """
+    d = pd.read_parquet(fetch_split(split, "item"))
+    out = {}
+    for iid, content in zip(d.item_id, d.item_content):
+        try:
+            j = json.loads(list(content["input"])[0])
+        except Exception:
+            continue
+        if key in j and j[key] is not None:
+            out[iid] = str(j[key])
+    return out
 
 
 def from_split(split, metric="bleurt-20"):
@@ -149,6 +168,55 @@ def traceability(df, piv, disc):
                                       "non_discriminating"])
 
 
+def _swap_rate(a, b):
+    """Share of model pairs the two rankings order differently."""
+    va, vb = a.values, b.values
+    n, swaps, pairs = len(va), 0, 0
+    for x in range(n):
+        for y in range(x + 1, n):
+            pairs += 1
+            if np.sign(va[x] - va[y]) != np.sign(vb[x] - vb[y]):
+                swaps += 1
+    return swaps / pairs if pairs else float("nan")
+
+
+def compare_facets(piv, facets, draws=40):
+    """Does each facet level rank models like the rest of the benchmark does?
+
+    Each level is compared against its complement, and against a SIZE-MATCHED
+    random baseline. That matching is the whole point: two 30-item subsets
+    disagree substantially from sampling noise alone, so comparing them to a
+    baseline drawn from 400-item halves manufactures findings. A level only
+    tells you something when it disagrees MORE than random subsets of the same
+    size already do.
+    """
+    rng = np.random.default_rng(SEED)
+    cols = np.array(piv.columns)
+    tagged = [c for c in cols if c in facets]
+    if len(tagged) < 60:
+        return None
+    rows = []
+    for lvl in sorted(set(facets[c] for c in tagged)):
+        inside = [c for c in tagged if facets[c] == lvl]
+        outside = [c for c in tagged if facets[c] != lvl]
+        if len(inside) < 25 or len(outside) < 25:
+            continue
+        obs = _swap_rate(piv[inside].mean(axis=1), piv[outside].mean(axis=1))
+        rho = spearmanr(piv[inside].mean(axis=1), piv[outside].mean(axis=1)).statistic
+        base = []
+        for _ in range(draws):                      # same sizes, random membership
+            perm = rng.permutation(tagged)
+            base.append(_swap_rate(piv[list(perm[:len(inside)])].mean(axis=1),
+                                   piv[list(perm[len(inside):])].mean(axis=1)))
+        b = float(np.mean(base))
+        rows.append((lvl, len(inside), rho, obs, b, obs - b))
+    if not rows:
+        return None
+    return pd.DataFrame(rows, columns=["level", "items", "rank_rho", "swap_rate",
+                                       "size_matched_baseline", "excess"]
+                        ).sort_values("excess", ascending=False)
+
+
 def diagnose(st):
     """Which conditions fired. Remedies live in _shared/interpreting-item-analysis.md.
 
@@ -159,39 +227,48 @@ def diagnose(st):
     d, out = st, []
     if d.get("n_models", 0) < MIN_MODELS_DISCRIM:
         out.append(("thin-matrix",
-                    f"{d['n_models']} models: discrimination, reliability and "
-                    "stability cannot be estimated"))
+                    f"only {d['n_models']} models: too few to calculate "
+                    "discrimination, reliability or stability"))
     if d.get("disc_le0") is not None and (d["disc_le0"] > 0.25 or d["disc_lt1"] > 0.40):
         out.append(("low-discrimination",
-                    f"{100*d['disc_lt1']:.1f}% of items barely separate models; "
-                    f"{d['n_disc_le0']} separate none"))
+                    f"{100*d['disc_lt1']:.1f}% of items hardly separate models. "
+                    f"{d['n_disc_le0']} items separate none at all."))
     if d.get("kr20") is not None:
         if d["kr20"] >= 0.8 and d["disc_mean"] < 0.15:
             out.append(("reliability-from-length",
-                        f"KR-20 {d['kr20']:.3f} rests on item count, not item quality"))
+                        f"KR-20 {d['kr20']:.3f} comes from the item count, "
+                        "not from item quality"))
         if d["kr20"] < 0.7:
             out.append(("unreliable-scale",
-                        f"KR-20 {d['kr20']:.3f}: the items are not one coherent measure"))
+                        f"KR-20 {d['kr20']:.3f}. The items do not act as "
+                        "one measure."))
     if d.get("gap") is not None and d.get("median_adj") is not None and d["median_adj"] > 0:
         if d["gap"] > 5 * d["median_adj"]:
             out.append(("unresolvable-ranking",
-                        f"gap needed {100*d['gap']:.1f}pts, median observed "
-                        f"{100*d['median_adj']:.2f}pts: adjacent ranks are not separable"))
+                        f"models need {100*d['gap']:.1f}pts to separate. The usual "
+                        f"gap is {100*d['median_adj']:.2f}pts. Neighbouring ranks "
+                        "are not separable."))
     if d.get("swap") is not None and (d["swap"] > 0.15 or d["rho"] < 0.85):
         out.append(("unstable-ranking",
-                    f"the two halves swap {100*d['swap']:.1f}% of model pairs"))
+                    f"two random halves of the items swap "
+                    f"{100*d['swap']:.1f}% of model pairs"))
     if d.get("ceiling", 0) > 0.20:
         out.append(("saturated", f"{100*d['ceiling']:.1f}% of items are at ceiling"))
     if d.get("floor", 0) > 0.20:
         out.append(("floored", f"{100*d['floor']:.1f}% of items are at floor"))
     if d.get("second_r") is not None and d["second_r"] < -0.5 and d["second_p"] < 0.05:
         out.append(("gameable-primary",
-                    "models low on the second construct rank far above their merit "
-                    "on the primary score alone"))
+                    "models that score low on the second measure rank too high "
+                    "when you use the first measure alone"))
+    for lvl, n, rho, swap, excess in d.get("facet_splits", []):
+        out.append(("facet-disagreement",
+                    f"'{lvl}' ({n} items) ranks models differently from the rest. "
+                    f"It disagrees {100*excess:.1f}pts more than random groups of "
+                    f"the same size do (swap {100*swap:.1f}%, rho {rho:.3f})."))
     for cap in d.get("weak_caps", []):
         out.append(("capability-unmeasured",
-                    f"'{cap}': its items do not discriminate, so the eval claims it "
-                    "and provides no evidence about it"))
+                    f"'{cap}': its items do not separate models. The eval claims "
+                    "this capability and gives no evidence for it."))
     return out
 
 
@@ -202,6 +279,8 @@ def main():
     src.add_argument("--split", help="OpenEval archive split, e.g. truthfulqa")
     src.add_argument("--records", help="path to OpenEval records (JSONL)")
     ap.add_argument("--metric", default="bleurt-20", help="archive metric to select")
+    ap.add_argument("--facet", help="item field to split on, e.g. is_adversarial or "
+                                    "category (archive splits only)")
     a = ap.parse_args()
 
     df = from_split(a.split, a.metric) if a.split else from_records(a.records)
@@ -224,8 +303,10 @@ def main():
         print(f"discrimination, KR-20: SKIPPED (needs >= {MIN_MODELS_DISCRIM} "
               f"models, have {n_models})")
 
+    baseline_rho = baseline_swap = None
     if n_models >= MIN_MODELS_STABILITY:
         rho, swap = stability(piv)
+        baseline_rho, baseline_swap = rho, swap
         print(f"split-half rank rho={rho:.3f}  pair swap rate={100*swap:.1f}%")
     else:
         print(f"ranking stability: SKIPPED (needs >= {MIN_MODELS_STABILITY} "
@@ -264,7 +345,30 @@ def main():
     else:
         print("traceability: SKIPPED (no ecbd_capability tags in records)")
 
+    facet_splits = []
+    if a.facet:
+        if not a.split:
+            raise SystemExit("--facet reads the archive item table; use it with --split")
+        facets = item_facets(a.split, a.facet)
+        tagged = sum(1 for c in piv.columns if c in facets)
+        print()
+        print(f"facet '{a.facet}': {tagged}/{n_items} items carry it")
+        fc = compare_facets(piv, facets)
+        if fc is None:
+            print("  too few tagged items to compare levels")
+        else:
+            print("  each level vs the rest, against a size-matched random baseline")
+            print(fc.head(8).to_string(index=False))
+            if len(fc) > 8:
+                print(f"  ... {len(fc)-8} more levels, sorted by excess")
+            facet_splits = [(fr.level, fr.items, fr.rank_rho, fr.swap_rate, fr.excess)
+                            for fr in fc.itertuples() if fr.excess > 0.05]
+            if not facet_splits:
+                print("  no level disagrees more than random subsets of its size: "
+                      "this facet explains nothing the benchmark does not already do")
+
     st = {"n_models": n_models, "n_items": n_items, "weak_caps": weak,
+          "facet_splits": facet_splits,
           "ceiling": float((diff > 0.95).mean()), "floor": float((diff < 0.05).mean())}
     if n_models >= MIN_MODELS_DISCRIM:
         st.update(kr20=kr20, disc_mean=float(disc.mean()),

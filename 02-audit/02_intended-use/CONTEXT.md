@@ -21,4 +21,4 @@ One job: extract the benchmark's stated intended use, and record precisely where
 - `02_intended-use.md` → the run folder
 
 ## Human check
-Read only the "absent" list. If it is empty, you probably reconstructed intent rather than found it — go back to the sources and check each claim against its citation. Edit in place.
+Read only the "absent" list. An empty list usually means you reconstructed the intent instead of finding it. Go back to the sources and check each claim against its citation. Edit this file directly.

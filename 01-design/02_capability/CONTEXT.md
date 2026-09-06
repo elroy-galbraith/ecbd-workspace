@@ -26,4 +26,4 @@ Do NOT load: content or evidence references — item and metric thinking at this
 - `02_capability.md` → the run folder
 
 ## Human check
-Read each definition to someone who works in the domain but not on this eval, and ask them to argue with it. A definition nobody can disagree with is usually too vague to measure. Edit in place.
+Read each definition to someone who works in the domain but not on this eval. Ask them to disagree with it. If nobody can disagree, the definition is too vague to measure. Edit this file directly.

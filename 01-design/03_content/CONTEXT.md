@@ -25,4 +25,4 @@ Do NOT load: `01_intended-use.md` — it reaches you through the capability file
 - draft items, if any exist yet → the run folder's `build/items/`
 
 ## Human check
-Take three items and answer them wrongly on purpose, in the most plausible way a competent system would. If the wrong answer is better explained by something other than lacking the capability, the item is measuring that other thing. Edit in place.
+Take three items. Answer each one incorrectly on purpose, in the way a competent system would. Then ask why that answer is wrong. If a better reason exists than "the system lacks the capability", the item measures that other reason. Edit this file directly.

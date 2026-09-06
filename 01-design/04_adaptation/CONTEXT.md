@@ -24,4 +24,4 @@ One job: fix how every object of evaluation is prompted, configured, or adapted,
 - prompt templates and config → the run folder's `build/adaptation/`
 
 ## Human check
-Run one item through the specified adaptation by hand against two different objects of evaluation. Confirm both produce something the parser accepts, and that neither was helped or hindered by the format. Edit in place.
+Send one item through the specified adaptation by hand, to two different objects of evaluation. Confirm two things. The parser accepts both responses. And the format neither helps nor hinders either object. Edit this file directly.

@@ -26,4 +26,4 @@ Two components, one module, because the second is meaningless without the first.
 - scorer and aggregator specs → the run folder's `build/scoring/`
 
 ## Human check
-Take the accumulated number and write the single sentence a user would say about a system scoring it. If that sentence claims more than the extraction and accumulation support, tighten the claim or the method. Edit in place.
+Take the accumulated number. Write the one sentence a user would say about a system that scores it. If that sentence claims more than the extraction and accumulation support, make the claim smaller or make the method better. Edit this file directly.

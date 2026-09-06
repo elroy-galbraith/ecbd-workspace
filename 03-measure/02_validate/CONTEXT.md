@@ -24,4 +24,4 @@ Bad records produce confident nonsense downstream. This stage exists so that fai
 - `records/` → the run folder, where records are held locally
 
 ## Human check
-Open three records and read them against the raw source — one typical, one with an unusual score, one from the worst-covered model. Confirm `item_adaptation.request_input` holds what the model actually received and not the unrendered template. Every adaptation finding rests on that field, and it is the one most often wrong.
+Open three records and compare them to the raw source. Choose one typical record, one with an unusual score, and one from the model with the least coverage. Confirm that `item_adaptation.request_input` holds what the model received, not the unrendered template. Every finding about adaptation depends on that field, and it is the field most often wrong.
