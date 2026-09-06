@@ -1,0 +1,4 @@
+# Markdown is the interface here — keep line endings stable across platforms
+# so diffs show content changes, not checkout artefacts.
+* text=auto eol=lf
+*.pdf binary

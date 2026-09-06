@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Nothing else is ignored on purpose.
+# worksheets/ is the product and is version-controlled: a completed worksheet is
+# a record of what was asked at the time, and its history is the point.
