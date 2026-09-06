@@ -15,6 +15,37 @@ Two pipelines over one shared framework:
 
 Both walk the same twenty questions. Every run becomes one folder in `worksheets/`.
 
+### Maturity, stated honestly
+
+| | State |
+|---|---|
+| `02-audit/` | **Proven.** Run end to end on TruthfulQA, including item-level psychometrics. Two loop-backs, both caught real errors. |
+| `01-design/` | **Scaffolded, never run.** Contracts have survived three adversarial cold-agent walk-throughs and zero real use. It is the harder half — it makes decisions rather than reading them — so expect loop-backs the audit line did not need. |
+| `_tools/` | **Working, narrow.** Assumes OpenEval's `bleurt-20` record shape; other benchmarks need their own accessor. |
+
+## What this actually gives you
+
+Most eval tooling tells you *what a model scored*. This tells you **whether a score means what it is being asked to mean** — and for any benchmark with OpenEval coverage, it can answer that with measurements rather than argument.
+
+The first real run makes the point better than a description. Auditing TruthfulQA for model selection produced:
+
+- No adjacent pair in a 145-model ranking is statistically distinguishable. Two models need roughly a **7-point gap** to separate; the median gap between adjacent ranks is **0.12 points**.
+- **The entire top ten fits inside the uncertainty of a single model's score.**
+- Split the item set in half at random and the two halves **swap a given model pair's order 21% of the time**.
+- **18% of items have zero or negative discrimination**; 48% are below 0.1. Length is carrying the reliability, not the content.
+- The one metric the authors validated as rank-preserving is an unreleased fine-tune of a retired model. **It cannot be run by anyone.**
+
+None of that is visible from an aggregate score, and none of it required trusting the auditor's judgement — it is arithmetic over item-level data, reproducible with one command.
+
+The same run also found TruthfulQA to be *better designed* than all three benchmarks in ECBD's own case studies. Both conclusions are true at once, which is the point: the framework separates "is this well built?" from "is this fit for what I am about to do with it?"
+
+## What it cannot do yet
+
+- **Emit** OpenEval-conformant data from evals designed here — that is `03-measure/`, approved and recorded in [docs/decisions/](docs/decisions/).
+- **Execute** an eval. `01-design/` ends at a runnable build; nothing runs it.
+- **Generalise the analysis** beyond OpenEval's `bleurt-20` record shape.
+- **Clear commercial use** of archive data. OpenEval is CC-BY-NC-4.0; unresolved.
+
 ## Why folders instead of one long prompt
 
 The structure *is* the orchestration. Numbered folders carry sequence, hierarchy carries context scoping, and plain markdown files carry state — so one agent reading the right files at the right moment does the work a multi-agent framework would do in code, and you can see the whole system state by opening a folder.
