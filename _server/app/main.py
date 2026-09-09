@@ -40,7 +40,7 @@ def _require_valid_stage(stage: str) -> None:
 
 
 def create_app(model_client: ModelClient | None = None, repo_root: Path | None = None) -> FastAPI:
-    repo_root = repo_root or Path(".").resolve()
+    repo_root = repo_root or Path(__file__).resolve().parents[2]
     app = FastAPI(title="ecbd-workspace orchestration backend")
     sessions: dict[str, StageRunner] = {}
 
@@ -197,3 +197,9 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         return {"diff": "\n".join(combined)}
 
     return app
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(create_app(), host="127.0.0.1", port=8000)
