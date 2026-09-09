@@ -1,4 +1,5 @@
 import type { TranscriptEntry } from "../api/types";
+import { toolIcon } from "./icons";
 
 interface TranscriptViewProps {
   entries: TranscriptEntry[];
@@ -46,14 +47,6 @@ export function toRenderLines(entries: TranscriptEntry[]): RenderLine[] {
   return lines;
 }
 
-function toolIcon(name: string): string {
-  if (name === "write_file" || name === "edit_file") return "📝";
-  if (name === "read_file") return "📖";
-  if (name === "create_run") return "🗂️";
-  if (name === "mark_ready_for_review") return "✅";
-  return "🔧";
-}
-
 export function TranscriptView({ entries }: TranscriptViewProps) {
   const lines = toRenderLines(entries);
   return (
@@ -74,7 +67,7 @@ export function TranscriptView({ entries }: TranscriptViewProps) {
           >
             <summary>
               {toolIcon(line.name)} {line.name}
-              {path ? ` \`${path}\`` : ""}
+              {path ? <> <code>{path}</code></> : null}
             </summary>
             <pre>{line.result}</pre>
           </details>

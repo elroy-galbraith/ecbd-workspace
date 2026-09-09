@@ -38,10 +38,16 @@ export function StagePage() {
   return (
     <div className="stage-page">
       <header className="stage-page__header">
-        <RunSwitcher currentSlug={slug} />
-        <span>
-          {run.data.slug} | stage {stage}
-        </span>
+        <div className="brand">
+          <span className="brand__mark" aria-hidden="true" />
+          ECBD
+        </div>
+        <div className="stage-page__divider" aria-hidden="true" />
+        <div className="crumb">
+          <RunSwitcher currentSlug={slug} />
+          <span className="crumb__sep" aria-hidden="true">/</span>
+          <span className="crumb__stage mono">stage {stage}</span>
+        </div>
       </header>
       <div className="stage-page__body">
         <StageRail slug={slug} stages={run.data.stages} approvedStages={run.data.approved_stages} activeStage={stage} />
@@ -55,6 +61,7 @@ export function StagePage() {
             />
           )}
           {showDiff && diff.data && <DiffView diff={diff.data.diff} />}
+          {currentRow && <DocumentPane slug={slug} file={currentRow.file} />}
           {showReject && (
             <RejectDialog
               approvedStages={run.data.approved_stages}
@@ -76,7 +83,6 @@ export function StagePage() {
               onCancel={() => setShowReject(false)}
             />
           )}
-          {currentRow && <DocumentPane slug={slug} file={currentRow.file} />}
         </main>
       </div>
       <ChatDrawer

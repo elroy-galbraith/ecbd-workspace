@@ -33,20 +33,25 @@ export function DocumentPane({ slug, file }: DocumentPaneProps) {
 
   return (
     <div className="document-pane">
-      <div className="document-pane__label">{file}</div>
-      <textarea
-        value={draft}
-        onChange={(event) => {
-          setDraft(event.target.value);
-          setDirty(true);
-        }}
-      />
-      <button
-        onClick={() => save.mutate(draft, { onSuccess: () => setDirty(false) })}
-        disabled={!dirty || save.isPending}
-      >
-        {save.isPending ? "Saving…" : "Save"}
-      </button>
+      <div className="document-pane__label mono">{file}</div>
+      <div className="document-pane__editor">
+        <textarea
+          value={draft}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            setDirty(true);
+          }}
+        />
+      </div>
+      <div className="document-pane__actions">
+        <button
+          className="btn btn--ghost"
+          onClick={() => save.mutate(draft, { onSuccess: () => setDirty(false) })}
+          disabled={!dirty || save.isPending}
+        >
+          {save.isPending ? "Saving…" : "Save"}
+        </button>
+      </div>
     </div>
   );
 }

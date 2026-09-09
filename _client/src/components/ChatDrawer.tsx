@@ -4,6 +4,7 @@ import { useSession } from "../api/queries";
 import { ApiError } from "../api/client";
 import { clearSessionId, loadSessionId, storeSessionId } from "../lib/sessionStorage";
 import { TranscriptView } from "./TranscriptView";
+import { IconChat, IconSend } from "./icons";
 
 interface ChatDrawerProps {
   runKey: string;
@@ -61,7 +62,7 @@ export function ChatDrawer({ runKey, stage, startSession, onSessionId }: ChatDra
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Say what you need for this stage..."
         />
-        <button onClick={handleStart} disabled={starting || !draft.trim()}>
+        <button className="btn btn--primary" onClick={handleStart} disabled={starting || !draft.trim()}>
           {starting ? "Starting…" : "Start"}
         </button>
         {startError && <p role="alert">{startError}</p>}
@@ -71,18 +72,30 @@ export function ChatDrawer({ runKey, stage, startSession, onSessionId }: ChatDra
 
   return (
     <div className={`chat-drawer${collapsed ? " chat-drawer--collapsed" : ""}`}>
-      <button onClick={() => setCollapsed((c) => !c)}>{collapsed ? "💬 Expand chat" : "Collapse chat"}</button>
+      <button className="chat-drawer__toggle" onClick={() => setCollapsed((c) => !c)}>
+        <IconChat width={15} height={15} />
+        {collapsed ? "Expand chat" : "Collapse chat"}
+      </button>
       {!collapsed && (
         <>
           {session.data && <TranscriptView entries={session.data.transcript} />}
-          <textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Reply..." />
-          <button onClick={handleSend} disabled={sendMessage.isPending || !draft.trim()}>
-            {sendMessage.isPending ? "Thinking…" : "Send"}
-          </button>
+          <div className="chat-drawer__composer">
+            <textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Reply..." />
+            <button
+              className="btn btn--primary btn--icon"
+              onClick={handleSend}
+              disabled={sendMessage.isPending || !draft.trim()}
+              aria-label={sendMessage.isPending ? "Thinking…" : "Send"}
+            >
+              <IconSend width={16} height={16} />
+            </button>
+          </div>
           {sendMessage.isError && (
             <p role="alert">{sendMessage.error instanceof Error ? sendMessage.error.message : "send failed"}</p>
           )}
-          <button onClick={handleForget}>Forget session</button>
+          <button className="btn btn--text chat-drawer__forget" onClick={handleForget}>
+            Forget session
+          </button>
         </>
       )}
     </div>

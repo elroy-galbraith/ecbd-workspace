@@ -43,18 +43,32 @@ export function NewRunPage() {
   }
 
   return (
-    <div className="new-run-page">
-      <h1>Start a design run</h1>
-      <p>Pipeline: design (the only one supported today)</p>
-      <ChatDrawer runKey="new" stage="01" startSession={(brief) => startRun.mutateAsync(brief)} onSessionId={handleSessionStarted} />
-      {sessionId && (
-        <div>
-          <button onClick={checkForNewRun} disabled={checking}>
-            {checking ? "Checking…" : "Check for created run"}
-          </button>
-          {checkError && <p role="alert">{checkError}</p>}
+    <div className="page">
+      <header className="page__topbar">
+        <div className="brand">
+          <span className="brand__mark" aria-hidden="true" />
+          ECBD
         </div>
-      )}
+      </header>
+      <div className="new-run-page">
+        <div className="new-run-page__intro">
+          <h1>Start a design run</h1>
+          <p>
+            Pipeline: <span className="tag tag--accent">design</span> — the only one supported today
+          </p>
+        </div>
+        <div className="panel new-run-page__composer">
+          <ChatDrawer runKey="new" stage="01" startSession={(brief) => startRun.mutateAsync(brief)} onSessionId={handleSessionStarted} />
+        </div>
+        {sessionId && (
+          <div className="new-run-page__check">
+            <button className="btn btn--ghost" onClick={checkForNewRun} disabled={checking}>
+              {checking ? "Checking…" : "Check for created run"}
+            </button>
+            {checkError && <p role="alert">{checkError}</p>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
