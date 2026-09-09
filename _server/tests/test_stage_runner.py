@@ -136,6 +136,34 @@ def test_run_md_error_is_reported_back_to_the_model_not_raised(tmp_repo: Path, t
     assert tool_result_turn["content"][0]["is_error"] is True
 
 
+def test_unanticipated_exception_in_dispatch_is_reported_not_raised(tmp_repo: Path, tmp_path: Path):
+    # write_file's input is missing "content", so _dispatch's
+    # call.input["content"] lookup raises KeyError -- a type of exception
+    # not in _dispatch's specific except clause. It must still be caught
+    # and reported as a tool error, not escape send() and leave the
+    # transcript ending in an unanswered tool_use block.
+    client = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="write_file", input={"path": "01_intended-use.md"})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="hit an unexpected snag")], stop_reason="end_turn"),
+    ])
+    runner = StageRunner(
+        scope=_stage_01_scope(tmp_repo),
+        model_client=client,
+        transcript=TranscriptStore(tmp_path / "session.jsonl"),
+        repo_root=tmp_repo,
+        pipeline="design",
+        stage_number="01",
+    )
+
+    reply = runner.send("go")
+
+    assert reply == "hit an unexpected snag"
+    turns = TranscriptStore(tmp_path / "session.jsonl").read_all()
+    tool_result_turn = turns[2]
+    assert tool_result_turn["content"][0]["is_error"] is True
+    assert "content" in tool_result_turn["content"][0]["content"]
+
+
 def test_runaway_tool_loop_raises_iteration_limit(tmp_repo: Path, tmp_path: Path):
     responses = [
         ModelResponse(content=[ToolUseBlock(id=f"c{i}", name="read_file", input={"path": "_shared/ecbd-framework.md"})], stop_reason="tool_use")

@@ -143,6 +143,14 @@ class StageRunner:
             return _ToolResult(call.id, f"unknown tool '{call.name}'", is_error=True)
         except (ScopeError, ContractError, CreateRunError, RunMdError, LogIndexError) as exc:
             return _ToolResult(call.id, str(exc), is_error=True)
+        except Exception as exc:
+            # Backstop: an uncaught exception here would leave the transcript
+            # ending in a tool_use block with no matching tool_result, which
+            # every future send() would replay to the API and get rejected
+            # for -- permanently breaking the session. Every failure in this
+            # method has a defined recovery path (report it to the model as
+            # a tool error), so a broad catch is correct here specifically.
+            return _ToolResult(call.id, f"tool failed: {exc}", is_error=True)
 
     def _mark_ready_for_review(self, call: ToolUseBlock) -> _ToolResult:
         run_md_path = self.scope.writable_files.get("RUN.md") or self.scope.readable_files.get("RUN.md")
