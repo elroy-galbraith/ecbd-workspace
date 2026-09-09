@@ -61,3 +61,34 @@ def test_start_stage_2_before_stage_1_is_approved_is_rejected(tmp_repo: Path):
     api = TestClient(app)
     response = api.post("/runs/design-my-eval/stages/02/start", json={"brief": "go"})
     assert response.status_code == 404
+
+
+def test_invalid_stage_on_start_is_rejected_cleanly(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    response = api.post("/runs/design-my-eval/stages/99/start", json={"brief": "go"})
+    assert response.status_code == 404
+
+
+def test_invalid_stage_on_approve_is_rejected_cleanly(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    response = api.post("/runs/design-my-eval/stages/99/approve")
+    assert response.status_code == 404
+
+
+def test_invalid_stage_on_reject_is_rejected_cleanly(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    response = api.post(
+        "/runs/design-my-eval/stages/99/reject",
+        json={"target_stage": "01", "reason": "n/a"},
+    )
+    assert response.status_code == 404
+
+
+def test_invalid_stage_on_diff_is_rejected_cleanly(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    response = api.get("/runs/design-my-eval/diff/99")
+    assert response.status_code == 404

@@ -33,6 +33,11 @@ class RejectRequest(BaseModel):
     reason: str
 
 
+def _require_valid_stage(stage: str) -> None:
+    if stage not in _STAGE_ORDER:
+        raise HTTPException(404, f"no such stage '{stage}'")
+
+
 def create_app(model_client: ModelClient | None = None, repo_root: Path | None = None) -> FastAPI:
     repo_root = repo_root or Path(".").resolve()
     app = FastAPI(title="ecbd-workspace orchestration backend")
@@ -100,6 +105,7 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
 
     @app.post("/runs/{slug}/stages/{stage}/start")
     def start_stage(slug: str, stage: str, req: StartSessionRequest) -> dict[str, str]:
+        _require_valid_stage(stage)
         run_root = repo_root / "worksheets" / slug
         if not run_root.exists():
             raise HTTPException(404, f"run '{slug}' does not exist")
@@ -128,6 +134,7 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
 
     @app.post("/runs/{slug}/stages/{stage}/approve")
     def approve(slug: str, stage: str) -> dict[str, Any]:
+        _require_valid_stage(stage)
         run_root = repo_root / "worksheets" / slug
         try:
             scope = load_stage_scope(stage_contract_path(stage), repo_root=repo_root, run_root=run_root)
@@ -138,6 +145,7 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
 
     @app.post("/runs/{slug}/stages/{stage}/reject")
     def reject(slug: str, stage: str, req: RejectRequest) -> dict[str, str]:
+        _require_valid_stage(stage)
         run_root = repo_root / "worksheets" / slug
         try:
             scope = load_stage_scope(stage_contract_path(stage), repo_root=repo_root, run_root=run_root)
@@ -148,6 +156,7 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
 
     @app.get("/runs/{slug}/diff/{stage}")
     def diff(slug: str, stage: str) -> dict[str, str]:
+        _require_valid_stage(stage)
         # NOTE: this captures the baseline lazily, on first call, rather than
         # precisely at session start as the spec describes. For a stage
         # output that didn't exist before the session (the common case --
