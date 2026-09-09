@@ -1,3 +1,35 @@
+---
+bootstrap: false
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+  - path: 04_adaptation.md
+    relative_to: run
+    access: read
+  - path: 02_capability.md
+    relative_to: run
+    access: read
+  - path: 05_assembly.md
+    relative_to: run
+    access: read
+  - path: _shared/worksheet-questions.md
+    relative_to: repo
+    access: read
+  - path: _shared/validity-evidence.md
+    relative_to: repo
+    access: read
+  - path: _shared/house-context.md
+    relative_to: repo
+    access: read
+    optional: true
+outputs:
+  - path: 06_evidence.md
+    relative_to: run
+  - path: build/scoring/
+    relative_to: run
+---
+
 # 06_evidence — turn responses into measurements
 
 One job: specify extraction (per item: response → observable variable) and accumulation (across items: variables → measurement of the capabilities).

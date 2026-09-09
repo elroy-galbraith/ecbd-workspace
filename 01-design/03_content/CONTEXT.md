@@ -1,3 +1,32 @@
+---
+bootstrap: false
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+  - path: 02_capability.md
+    relative_to: run
+    access: read
+  - path: _shared/worksheet-questions.md
+    relative_to: repo
+    access: read
+  - path: _shared/validity-evidence.md
+    relative_to: repo
+    access: read
+  - path: _shared/house-context.md
+    relative_to: repo
+    access: read
+    optional: true
+  - path: references/item-design.md
+    relative_to: stage
+    access: read
+outputs:
+  - path: 03_content.md
+    relative_to: run
+  - path: build/items/
+    relative_to: run
+---
+
 # 03_content — design the pool of test items
 
 One job: specify the item pool and show each item elicits evidence about the capabilities it targets.

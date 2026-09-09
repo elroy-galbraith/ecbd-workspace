@@ -1,3 +1,30 @@
+---
+bootstrap: false
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+  - path: 01_intended-use.md
+    relative_to: run
+    access: read
+  - path: _shared/capability-conventions.md
+    relative_to: repo
+    access: read
+  - path: _shared/worksheet-questions.md
+    relative_to: repo
+    access: read
+  - path: _shared/validity-evidence.md
+    relative_to: repo
+    access: read
+  - path: _shared/house-context.md
+    relative_to: repo
+    access: read
+    optional: true
+outputs:
+  - path: 02_capability.md
+    relative_to: run
+---
+
 # 02_capability — name and ground what you are measuring
 
 One job: define the capabilities of interest and connect them to the intended use.

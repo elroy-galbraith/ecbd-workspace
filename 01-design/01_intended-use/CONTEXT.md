@@ -1,3 +1,27 @@
+---
+bootstrap: true
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+  - path: _shared/ecbd-framework.md
+    relative_to: repo
+    access: read
+  - path: _shared/worksheet-questions.md
+    relative_to: repo
+    access: read
+  - path: worksheets/_index/log.md
+    relative_to: repo
+    access: read
+  - path: _shared/house-context.md
+    relative_to: repo
+    access: read
+    optional: true
+outputs:
+  - path: 01_intended-use.md
+    relative_to: run
+---
+
 # 01_intended-use — settle what this eval is for
 
 One job: state the intended use precisely enough that every later decision can be judged against it.

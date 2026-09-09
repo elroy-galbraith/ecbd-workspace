@@ -1,3 +1,32 @@
+---
+bootstrap: false
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+  - path: 03_content.md
+    relative_to: run
+    access: read
+  - path: 02_capability.md
+    relative_to: run
+    access: read
+  - path: _shared/worksheet-questions.md
+    relative_to: repo
+    access: read
+  - path: _shared/validity-evidence.md
+    relative_to: repo
+    access: read
+  - path: _shared/house-context.md
+    relative_to: repo
+    access: read
+    optional: true
+outputs:
+  - path: 05_assembly.md
+    relative_to: run
+  - path: build/items/
+    relative_to: run
+---
+
 # 05_assembly — select the set actually used
 
 One job: decide which items from the pool are used, and show the selection gathers sufficient evidence for every capability.
