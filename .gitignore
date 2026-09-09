@@ -19,3 +19,7 @@ desktop.ini
 # is too much: add `worksheets/_index/log.md` below.
 worksheets/*/
 !worksheets/_index/
+
+# Orchestration backend: session transcripts, never committed
+.sessions/
+_server/.venv/
