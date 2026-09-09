@@ -53,7 +53,7 @@ class AnthropicModelClient:
     def create(self, system, messages, tools) -> ModelResponse:
         response = self._client.messages.create(
             model=self._model,
-            max_tokens=4096,
+            max_tokens=16000,
             system=system,
             messages=messages,
             tools=tools,

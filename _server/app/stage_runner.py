@@ -25,6 +25,10 @@ class IterationLimitExceeded(Exception):
     pass
 
 
+class TruncatedResponseError(Exception):
+    pass
+
+
 _BASE_TOOLS = [
     {
         "name": "read_file",
@@ -197,6 +201,13 @@ class StageRunner:
             )
             assistant_entry = {"role": "assistant", "content": _blocks_to_dicts(response)}
             self.transcript.append(assistant_entry)
+
+            if response.stop_reason == "max_tokens":
+                raise TruncatedResponseError(
+                    f"stage {self.stage_number} hit the token limit mid-turn -- "
+                    "the model's response was cut off"
+                )
+
             messages.append(assistant_entry)
 
             tool_calls = [b for b in response.content if isinstance(b, ToolUseBlock)]

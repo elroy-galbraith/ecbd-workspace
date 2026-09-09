@@ -14,7 +14,7 @@ from .model_client import AnthropicModelClient, ModelClient
 from .run_md import get_approved_stages
 from .scope import load_stage_scope
 from .snapshot import SnapshotStore
-from .stage_runner import StageRunner
+from .stage_runner import StageRunner, TruncatedResponseError
 from .transcript import TranscriptStore
 
 _STAGE_ORDER = ["01", "02", "03", "04", "05", "06", "07", "08"]
@@ -91,7 +91,10 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
             stage_number=stage,
         )
         sessions[session_id] = runner
-        runner.send(brief)
+        try:
+            runner.send(brief)
+        except TruncatedResponseError as exc:
+            raise HTTPException(502, str(exc)) from exc
         return session_id
 
     @app.post("/runs/{pipeline}/start")
@@ -120,7 +123,10 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         runner = sessions.get(session_id)
         if runner is None:
             raise HTTPException(404, f"no such session '{session_id}'")
-        reply = runner.send(req.brief)
+        try:
+            reply = runner.send(req.brief)
+        except TruncatedResponseError as exc:
+            raise HTTPException(502, str(exc)) from exc
         return {"reply": reply}
 
     @app.get("/sessions/{session_id}")

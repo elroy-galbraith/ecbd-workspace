@@ -4,7 +4,7 @@ import pytest
 
 from app.model_client import ModelResponse, TextBlock, ToolUseBlock
 from app.scope import load_stage_scope
-from app.stage_runner import IterationLimitExceeded, StageRunner
+from app.stage_runner import IterationLimitExceeded, StageRunner, TruncatedResponseError
 from app.transcript import TranscriptStore
 from tests.fakes import FakeModelClient
 
@@ -225,6 +225,27 @@ def test_unanticipated_exception_in_dispatch_is_reported_not_raised(tmp_repo: Pa
     tool_result_turn = turns[2]
     assert tool_result_turn["content"][0]["is_error"] is True
     assert "content" in tool_result_turn["content"][0]["content"]
+
+
+def test_truncated_response_raises(tmp_repo: Path, tmp_path: Path):
+    client = FakeModelClient([
+        ModelResponse(content=[TextBlock(text="the eval measures faithfulness of sum")], stop_reason="max_tokens"),
+    ])
+    runner = StageRunner(
+        scope=_stage_01_scope(tmp_repo),
+        model_client=client,
+        transcript=TranscriptStore(tmp_path / "session.jsonl"),
+        repo_root=tmp_repo,
+        pipeline="design",
+        stage_number="01",
+    )
+
+    with pytest.raises(TruncatedResponseError):
+        runner.send("go")
+
+    # the truncated content is still recorded in the transcript
+    turns = TranscriptStore(tmp_path / "session.jsonl").read_all()
+    assert turns[-1]["role"] == "assistant"
 
 
 def test_runaway_tool_loop_raises_iteration_limit(tmp_repo: Path, tmp_path: Path):
