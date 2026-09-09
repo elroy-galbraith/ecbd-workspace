@@ -14,8 +14,9 @@ This record covers **only the orchestration backend** — the piece that runs st
 
 ## Decision
 
-- **Single user, no multi-tenancy.** No per-user isolation to design; a login gate is enough if this leaves your own machine.
-- **Git-backed files stay the source of truth.** The backend operates on the same `worksheets/`, `_shared/`, `_templates/` tree a checkout would show. Every stage approval is a git commit. A web UI is a view over real files, not a replacement for them.
+- **Localhost only.** The backend runs on your own machine; the browser talks to `localhost`. No auth needed — there's no network exposure to gate. This is load-bearing, not incidental: `worksheets/CONTEXT.md` already documents that run folders never leave your machine ("often client work or unreleased models"), and that guarantee only holds if the process reading and writing them also never leaves your machine. A cloud-hosted backend would silently break it.
+- **Single user, no multi-tenancy.** No per-user isolation to design.
+- **Git-backed *scaffold*, not git-backed runs.** `worksheets/*/` is gitignored on purpose (confirmed in `.gitignore` and `worksheets/CONTEXT.md`) — only `worksheets/_index/log.md` and the scaffold `CONTEXT.md` files are tracked. The backend must not commit anything inside a run folder. `RUN.md`'s stage table and loop-back table are the audit trail already, as plain files — no commit is needed for them to persist. The only commit the backend ever makes is the one-line append to `_index/log.md` that `create_run` performs.
 - **Conversational per stage.** The model can ask a clarifying question mid-stage and wait for a reply, or chain tool calls autonomously to draft a file — same code path either way (see Conversation loop, below).
 - **Tool scope is hard-enforced per stage**, not left to prompt discipline. A stage's `CONTEXT.md` gets a structured frontmatter block the backend parses into a `StageScope`; a path outside that scope is a tool error, not a suggestion the model can ignore.
 - **Direct Anthropic API**, not OpenRouter. Native tool-use blocks, and prompt caching pays for itself since the contract text and shared references are identical across every run of a given stage.
@@ -37,10 +38,15 @@ This record covers **only the orchestration backend** — the piece that runs st
               ┌────────────────────┼────────────────────┐
               │                    │                    │
      ┌────────▼────────┐ ┌─────────▼────────┐ ┌─────────▼────────┐
-     │ Contract Loader   │ │ Stage Runner      │ │ Git Layer         │
-     │ (parses CONTEXT.md│ │ (conversation loop,│ │ (commit per stage │
-     │  frontmatter →    │ │  tool dispatch,    │ │  completion, diff  │
-     │  StageScope)       │ │  Anthropic client) │ │  for human check)  │
+     │ Contract Loader   │ │ Stage Runner      │ │ Log Index &        │
+     │ (parses CONTEXT.md│ │ (conversation loop,│ │ Session Diff       │
+     │  frontmatter →    │ │  tool dispatch,    │ │ (commits only      │
+     │  StageScope)       │ │  Anthropic client) │ │  _index/log.md;    │
+     │                    │ │                    │ │  diffs a stage's   │
+     │                    │ │                    │ │  files against a  │
+     │                    │ │                    │ │  session-start     │
+     │                    │ │                    │ │  snapshot — never  │
+     │                    │ │                    │ │  git, for runs)    │
      └────────┬────────┘ └─────────┬────────┘ └─────────┬────────┘
               │                    │                    │
               └────────────────────┼────────────────────┘
@@ -59,7 +65,7 @@ This record covers **only the orchestration backend** — the piece that runs st
                         └───────────────────────┘
 ```
 
-Five independently-testable units: **Contract Loader** (contract → scope), **Scoped Filesystem Tool** (scope-enforced read/write/edit), **Stage Runner** (owns one stage's conversation and the Anthropic tool-use loop), **Git Layer** (commits on approval, diffs for the human check), **Stage Session API** (the only thing a frontend talks to).
+Five independently-testable units: **Contract Loader** (contract → scope), **Scoped Filesystem Tool** (scope-enforced read/write/edit), **Stage Runner** (owns one stage's conversation and the Anthropic tool-use loop), **Log Index & Session Diff** (the one narrow place that touches git — appending to `_index/log.md` — plus a non-git diff of a stage's files against how they looked when the session opened), **Stage Session API** (the only thing a frontend talks to).
 
 ## Contract format: frontmatter + scope resolution
 
@@ -124,16 +130,16 @@ The one race worth guarding: the contract invites direct human edits to the same
 
 This is where the backend turns CLAUDE.md's stated rule — *nothing moves to the next stage until a person has read the output of the last one* — into an actual constraint:
 
-1. `mark_ready_for_review()` ticks the row. No commit, no unlock.
-2. UI shows the contract's Human check text plus a diff since last commit. From here: keep chatting, edit the file directly, or resolve —
-   - **`approve_stage`**: validates every declared output exists and is non-empty, auto-ticks if the model never did, commits, marks the stage done. **Only after this commit exists can a session for stage N+1 be started** — structurally, not just by convention.
-   - **`reject_stage(target_stage, reason)`**: unticks the current stage (and any in between), adds a `RUN.md` Loop-backs row, commits, reopens `target_stage`'s session (resuming its prior transcript if one exists).
+1. `mark_ready_for_review()` ticks the row. No unlock yet.
+2. UI shows the contract's Human check text plus a diff against how the file looked when this stage's session opened (a plain file snapshot, not git — worksheet content is never committed). From here: keep chatting, edit the file directly, or resolve —
+   - **`approve_stage`**: validates every declared output exists and is non-empty, auto-ticks if the model never did, writes the tick to `RUN.md` on disk, marks the stage done in the session state. **Only after this write completes can a session for stage N+1 be started** — structurally, not just by convention. Nothing here touches git.
+   - **`reject_stage(target_stage, reason)`**: unticks the current stage (and any in between), adds a `RUN.md` Loop-backs row, reopens `target_stage`'s session (resuming its prior transcript if one exists). Also a plain file write, no commit.
 
 The system validates structure — files exist, scope respected, gate order enforced — never quality. That judgment is exactly what the human check is for.
 
 ## API surface
 
-Single-user; a lightweight login gate is sufficient.
+Localhost-only; no auth. Bind to `127.0.0.1`, never `0.0.0.0`.
 
 | Endpoint | Purpose |
 |---|---|
@@ -145,7 +151,7 @@ Single-user; a lightweight login gate is sufficient.
 | `POST /runs/:slug/stages/:stage/approve` | `approve_stage` |
 | `POST /runs/:slug/stages/:stage/reject` | `reject_stage` |
 | `GET`/`PUT /runs/:slug/files/:path` | document viewer/editor pane — scoped to that run folder, path-traversal guarded |
-| `GET /runs/:slug/diff/:stage` | git diff since last commit, for the human-check view |
+| `GET /runs/:slug/diff/:stage` | diff against the session-start snapshot, for the human-check view — plain file comparison, not git |
 
 ## Error handling
 
@@ -165,8 +171,10 @@ Single-user; a lightweight login gate is sufficient.
 ## Consequences
 
 - Every existing stage `CONTEXT.md` needs a frontmatter block added before this backend can run against it — mechanical, but touches all 14+ stage contracts across `01-design/` and `02-audit/` (and `03-measure/` if that pipeline is included later).
-- `.sessions/` needs adding to `.gitignore`.
+- `.sessions/` lives inside a run folder, which is already gitignored (`worksheets/*/`) — no separate `.gitignore` entry needed.
 - The workspace's "loading discipline" rule moves from a norm you can watch enforced in a terminal to a technical constraint enforced in code — stricter than today's Claude Code sessions, which could technically read outside a contract's Inputs if the model chose to.
+- Because the backend never commits worksheet content, there is no built-in recovery if you edit or delete a run folder by mistake — same as today. The backend does not change this workspace's existing stance that runs need a backup outside this repo if they matter; it must not invent one via git without you deciding that separately.
+- Running localhost-only means this design carries no auth, no CORS hardening beyond the default same-origin behavior, and no concern for concurrent remote clients. If a later need ever pushes this off of localhost (e.g. onto a private home server), auth and network hardening become required additions — not covered by this record.
 
 ## What is not decided
 
