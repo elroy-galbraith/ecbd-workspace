@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from .approval import ApprovalError, approve_stage, reject_stage
 from .contract import ContractError
 from .model_client import AnthropicModelClient, ModelClient
-from .run_md import get_approved_stages
+from .run_md import RunMdError, get_approved_stages, parse_run_md
 from .scope import load_stage_scope
 from .snapshot import SnapshotStore
 from .stage_runner import StageRunner, TruncatedResponseError
@@ -74,6 +74,15 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
             cols = [c.strip() for c in line.strip("|").split("|")]
             rows.append({"slug": cols[0], "mode": cols[1], "subject": cols[2], "opened": cols[3]})
         return rows
+
+    @app.get("/runs/{slug}")
+    def get_run(slug: str) -> dict[str, Any]:
+        text = run_stage_table(slug)
+        try:
+            parsed = parse_run_md(text)
+        except RunMdError as exc:
+            raise HTTPException(500, str(exc)) from exc
+        return {"slug": slug, **parsed}
 
     def _start_session(pipeline: str, stage: str, run_root: Path | None, brief: str) -> str:
         try:

@@ -116,3 +116,33 @@ def test_invalid_stage_on_diff_is_rejected_cleanly(tmp_repo: Path):
     api = TestClient(app)
     response = api.get("/runs/design-my-eval/diff/99")
     assert response.status_code == 404
+
+
+def test_get_run_returns_parsed_run_md(tmp_repo: Path):
+    client_stage_1 = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "A faithfulness eval"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c2", name="write_file", input={"path": "01_intended-use.md", "content": "the intended use"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c3", name="mark_ready_for_review", input={})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="drafted")], stop_reason="end_turn"),
+    ])
+    app = create_app(model_client=client_stage_1, repo_root=tmp_repo)
+    api = TestClient(app)
+    api.post("/runs/design/start", json={"brief": "I need a faithfulness eval"})
+
+    run = api.get("/runs/design-my-eval")
+    assert run.status_code == 200
+    body = run.json()
+    assert body["slug"] == "design-my-eval"
+    assert body["status"] == "intake"
+    assert body["approved_stages"] == []
+    stage_01 = next(s for s in body["stages"] if s["stage"] == "01")
+    assert stage_01["done"] is True
+    assert stage_01["file"] == "01_intended-use.md"
+    assert body["loop_backs"] == []
+
+
+def test_get_run_404_for_unknown_slug(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    response = api.get("/runs/design-nonexistent")
+    assert response.status_code == 404
