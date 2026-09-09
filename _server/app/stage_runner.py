@@ -131,9 +131,21 @@ class StageRunner:
             if call.name == "read_file":
                 return _ToolResult(call.id, self.fs_tool.read_file(call.input["path"]))
             if call.name == "write_file":
+                if self.ready_for_review:
+                    return _ToolResult(
+                        call.id,
+                        "this stage was already marked ready for review; a human must respond before further edits",
+                        is_error=True,
+                    )
                 self.fs_tool.write_file(call.input["path"], call.input["content"])
                 return _ToolResult(call.id, f"wrote {call.input['path']}")
             if call.name == "edit_file":
+                if self.ready_for_review:
+                    return _ToolResult(
+                        call.id,
+                        "this stage was already marked ready for review; a human must respond before further edits",
+                        is_error=True,
+                    )
                 self.fs_tool.edit_file(call.input["path"], call.input["old"], call.input["new"])
                 return _ToolResult(call.id, f"edited {call.input['path']}")
             if call.name == "mark_ready_for_review":
@@ -174,6 +186,10 @@ class StageRunner:
             entry = {"role": "user", "content": [{"type": "text", "text": user_message}]}
             self.transcript.append(entry)
             messages.append(entry)
+            # A new human message means the human is reopening this stage
+            # for further edits -- the write-freeze from a prior
+            # mark_ready_for_review() no longer applies.
+            self.ready_for_review = False
 
         for _ in range(MAX_TOOL_ITERATIONS):
             response = self.model_client.create(

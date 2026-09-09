@@ -136,6 +136,69 @@ def test_run_md_error_is_reported_back_to_the_model_not_raised(tmp_repo: Path, t
     assert tool_result_turn["content"][0]["is_error"] is True
 
 
+def test_write_after_mark_ready_for_review_is_rejected_same_send_call(tmp_repo: Path, tmp_path: Path):
+    client = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "subj"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c2", name="write_file", input={"path": "01_intended-use.md", "content": "first draft"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c3", name="mark_ready_for_review", input={})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c4", name="write_file", input={"path": "01_intended-use.md", "content": "second draft, should be rejected"})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="done")], stop_reason="end_turn"),
+    ])
+    scope = _stage_01_scope(tmp_repo)
+    runner = StageRunner(
+        scope=scope,
+        model_client=client,
+        transcript=TranscriptStore(tmp_path / "session.jsonl"),
+        repo_root=tmp_repo,
+        pipeline="design",
+        stage_number="01",
+    )
+
+    runner.send("go")
+
+    run_root = tmp_repo / "worksheets" / "design-my-eval"
+    assert (run_root / "01_intended-use.md").read_text() == "first draft"
+
+    turns = TranscriptStore(tmp_path / "session.jsonl").read_all()
+    c4_result = None
+    for turn in turns:
+        for block in turn["content"]:
+            if isinstance(block, dict) and block.get("tool_use_id") == "c4":
+                c4_result = block
+    assert c4_result is not None
+    assert c4_result["is_error"] is True
+
+
+def test_new_send_call_resets_the_freeze_and_allows_further_writes(tmp_repo: Path, tmp_path: Path):
+    client = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "subj"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c2", name="write_file", input={"path": "01_intended-use.md", "content": "first draft"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c3", name="mark_ready_for_review", input={})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="ready for review")], stop_reason="end_turn"),
+        ModelResponse(content=[ToolUseBlock(id="c4", name="write_file", input={"path": "01_intended-use.md", "content": "revised after feedback"})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="updated")], stop_reason="end_turn"),
+    ])
+    scope = _stage_01_scope(tmp_repo)
+    runner = StageRunner(
+        scope=scope,
+        model_client=client,
+        transcript=TranscriptStore(tmp_path / "session.jsonl"),
+        repo_root=tmp_repo,
+        pipeline="design",
+        stage_number="01",
+    )
+
+    runner.send("go")
+    assert runner.ready_for_review is True
+
+    reply = runner.send("please revise the wording")
+
+    assert reply == "updated"
+    assert runner.ready_for_review is False
+    run_root = tmp_repo / "worksheets" / "design-my-eval"
+    assert (run_root / "01_intended-use.md").read_text() == "revised after feedback"
+
+
 def test_unanticipated_exception_in_dispatch_is_reported_not_raised(tmp_repo: Path, tmp_path: Path):
     # write_file's input is missing "content", so _dispatch's
     # call.input["content"] lookup raises KeyError -- a type of exception
