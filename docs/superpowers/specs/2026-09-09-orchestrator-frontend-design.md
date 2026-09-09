@@ -16,8 +16,9 @@ The backend's actual behavior differs from its own decision record in a few ways
 - Session state is **in-memory only** (`sessions: dict[str, StageRunner]` in `_server/app/main.py`) — a server restart loses every active session. `GET /sessions/:id` only works against the process that created it; there is no rehydration path from the `.sessions/*.jsonl` transcripts yet.
 - Only the `design` pipeline's `start` route is wired up (`POST /runs/{pipeline}/start` rejects anything but `"design"`).
 - `reject_stage` correctly rewrites `RUN.md` but cannot reopen the target stage's prior session, for the same rehydration-gap reason.
+- Two routes the backend record's own API table lists as part of the surface were never actually implemented: `GET /runs/:slug` (parsed `RUN.md`) and `GET`/`PUT /runs/:slug/files/:path` (document viewer/editor). This is different from the gaps above — those are documented shortfalls of a real design; these two are just missing code for a design that was already agreed.
 
-This frontend is built **frontend-only, against the backend as it stands** — no backend changes as part of this work. Where the backend's real behavior falls short of its own decision record (no streaming, no resumption), the frontend degrades honestly rather than pretending otherwise.
+This frontend is built **frontend-only against every already-agreed part of the backend's API surface** — no new backend design happens here. The one exception is finishing the two routes above: since they're already fully specified in `docs/decisions/2026-09-09-orchestration-backend.md`'s API table and the stage rail and document pane cannot exist without them, this plan implements exactly what that table already specifies, as a small prerequisite, rather than redesigning the frontend around their absence. Where the backend's real behavior falls short of its own decision record in ways that *would* require new design to fix (no streaming, no resumption), the frontend degrades honestly instead.
 
 ## Decision
 
@@ -25,7 +26,7 @@ This frontend is built **frontend-only, against the backend as it stands** — n
 - **Stack: React + Vite + TypeScript.** A standard SPA toolchain — fast dev server, good fit for a chat UI plus a document viewer with local component state, and the easiest base to extend later (streaming, multi-pipeline, session resumption) without a rewrite.
 - **Data fetching: `@tanstack/react-query`.** Every mutation (send message, approve, reject, save a file edit) invalidates the relevant query so the UI reflects the backend's actual file/session state rather than an optimistic guess — important given the backend has no push channel to correct a wrong guess later.
 - **Routing: `react-router`.**
-- **No new backend endpoints, no backend edits.** The documented API surface (see `docs/decisions/2026-09-09-orchestration-backend.md`'s API table) is a fixed contract for this sub-project.
+- **Backend: finish two already-specified endpoints, change nothing else.** `GET /runs/:slug` and `GET`/`PUT /runs/:slug/files/:path` are implemented exactly as `docs/decisions/2026-09-09-orchestration-backend.md`'s API table already describes them, plus CORS opened for the frontend's dev-server origin. No other backend behavior changes, and no new backend design decisions are made — the rest of the documented API surface is a fixed contract for this sub-project.
 
 ## Screens & routes
 
@@ -56,7 +57,7 @@ Document-first, two-column, chat as a bottom drawer — chosen over a three-colu
 
 - **Stage rail** (left): parsed from `GET /runs/:slug`'s stage table. Approved stages and the current stage are clickable; later stages are locked (unclickable, visibly dimmed) until the one before them is approved — mirrors the backend's own `stage_is_approved` gate on `POST /runs/:slug/stages/:stage/start`, so the UI never offers an action the backend would 404.
 - **Run switcher** (top bar): a dropdown, not a persistent list — this is a single-user local tool where run count stays small; a dropdown is enough and keeps the document pane's width.
-- **Document pane** (center): one declared output file at a time (a stage may declare more than one; a small in-pane tab per output file if so). Fetched via `GET /runs/:slug/files/:path`, editable inline, saved via `PUT` on blur/explicit save — a direct alternative to asking the model to write it, matching the backend record's own framing ("keep chatting, edit the file directly, or resolve").
+- **Document pane** (center): the file named in the current stage's `RUN.md` row (the stage table's `File` column — `parse_run_md` already surfaces this, so the frontend never needs the CONTEXT.md contract's `outputs` directly). A directory-shaped entry (`build/` for stage 08) shows a plain notice instead of an editor — no enumeration tool exists yet (a known backend gap), so there's nothing meaningful to fetch. Fetched via `GET /runs/:slug/files/:path`, editable inline, saved via explicit `PUT` — a direct alternative to asking the model to write it, matching the backend record's own framing ("keep chatting, edit the file directly, or resolve"). The `PUT` endpoint refuses an edit to `RUN.md` that would change `approved_stages` (mirroring the existing model-tool guard in `_server/app/fs_tool.py`) — that fact stays exclusively `approve_stage`/`reject_stage`'s to write, whether the write comes from the model or a direct human edit.
 - **Chat drawer** (bottom): collapsed by default, expands to show the transcript and an input. Collapsing it doesn't stop anything server-side — it's a viewport choice, not a session state.
 
 ### Review banner
