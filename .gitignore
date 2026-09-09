@@ -27,3 +27,6 @@ _server/.venv/
 # Python cache files
 __pycache__/
 *.pyc
+
+# Brainstorming visual companion (superpowers skill scratch space)
+.superpowers/
