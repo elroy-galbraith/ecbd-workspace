@@ -61,3 +61,43 @@ def test_missing_frontmatter_raises():
 def test_unterminated_frontmatter_raises():
     with pytest.raises(ContractError):
         parse_contract("---\nbootstrap: true\n# never closed\n")
+
+
+def test_conflicting_access_levels_on_the_same_path_raises():
+    conflicting = """---
+bootstrap: true
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+outputs:
+  - path: 01_intended-use.md
+    relative_to: run
+---
+Some prose.
+"""
+    with pytest.raises(ContractError):
+        parse_contract(conflicting)
+
+
+def test_identical_duplicate_input_declarations_do_not_raise():
+    redundant = """---
+bootstrap: true
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+outputs:
+  - path: 01_intended-use.md
+    relative_to: run
+---
+Some prose.
+"""
+    contract = parse_contract(redundant)
+    assert len(contract.inputs) == 2

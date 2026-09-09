@@ -71,13 +71,23 @@ def parse_contract(text: str) -> StageContract:
         raise ContractError("contract frontmatter is missing 'outputs'")
 
     inputs = []
+    seen_access: dict[tuple[str, str], Access] = {}
     for item in data["inputs"]:
         _check_base(item["relative_to"], item["path"])
+        access = Access(item["access"])
+        key = (item["path"], item["relative_to"])
+        if key in seen_access and seen_access[key] != access:
+            raise ContractError(
+                f"conflicting access levels declared for '{item['path']}' "
+                f"(relative_to '{item['relative_to']}'): "
+                f"'{seen_access[key].value}' vs '{access.value}'"
+            )
+        seen_access[key] = access
         inputs.append(
             InputSpec(
                 path=item["path"],
                 relative_to=item["relative_to"],
-                access=Access(item["access"]),
+                access=access,
                 optional=item.get("optional", False),
             )
         )
