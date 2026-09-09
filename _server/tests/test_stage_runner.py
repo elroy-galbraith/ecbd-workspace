@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from app.model_client import ModelResponse, TextBlock, ToolUseBlock
+from app.run_md import get_approved_stages
 from app.scope import load_stage_scope
 from app.stage_runner import IterationLimitExceeded, StageRunner, TruncatedResponseError
 from app.transcript import TranscriptStore
@@ -246,6 +247,53 @@ def test_truncated_response_raises(tmp_repo: Path, tmp_path: Path):
     # the truncated content is still recorded in the transcript
     turns = TranscriptStore(tmp_path / "session.jsonl").read_all()
     assert turns[-1]["role"] == "assistant"
+
+
+def test_model_cannot_bypass_approval_gate_via_edit_file(tmp_repo: Path, tmp_path: Path):
+    # approved_stages: in RUN.md is meant to be writable only by
+    # approve_stage/reject_stage (human-invoked, via app/approval.py) --
+    # never directly by the model's own write_file/edit_file tools. This is
+    # an end-to-end regression test for that gate, exercised through the
+    # real conversation loop rather than at the fs_tool unit level.
+    client = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "subj"})], stop_reason="tool_use"),
+        ModelResponse(
+            content=[
+                ToolUseBlock(
+                    id="c2",
+                    name="edit_file",
+                    input={
+                        "path": "RUN.md",
+                        "old": "approved_stages: []",
+                        "new": 'approved_stages: ["01"]',
+                    },
+                )
+            ],
+            stop_reason="tool_use",
+        ),
+        ModelResponse(content=[TextBlock(text="understood, that's not mine to change")], stop_reason="end_turn"),
+    ])
+    scope = _stage_01_scope(tmp_repo)
+    runner = StageRunner(
+        scope=scope,
+        model_client=client,
+        transcript=TranscriptStore(tmp_path / "session.jsonl"),
+        repo_root=tmp_repo,
+        pipeline="design",
+        stage_number="01",
+    )
+
+    reply = runner.send("go")
+
+    assert reply == "understood, that's not mine to change"
+
+    turns = TranscriptStore(tmp_path / "session.jsonl").read_all()
+    tool_result_turn = turns[4]
+    assert tool_result_turn["content"][0]["is_error"] is True
+
+    run_root = tmp_repo / "worksheets" / "design-my-eval"
+    run_md_text = (run_root / "RUN.md").read_text(encoding="utf-8")
+    assert get_approved_stages(run_md_text) == []
 
 
 def test_runaway_tool_loop_raises_iteration_limit(tmp_repo: Path, tmp_path: Path):
