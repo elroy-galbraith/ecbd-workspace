@@ -132,8 +132,8 @@ This is where the backend turns CLAUDE.md's stated rule — *nothing moves to th
 
 1. `mark_ready_for_review()` ticks the row. No unlock yet.
 2. UI shows the contract's Human check text plus a diff against how the file looked when this stage's session opened (a plain file snapshot, not git — worksheet content is never committed). From here: keep chatting, edit the file directly, or resolve —
-   - **`approve_stage`**: validates every declared output exists and is non-empty, auto-ticks if the model never did, writes the tick to `RUN.md` on disk, marks the stage done in the session state. **Only after this write completes can a session for stage N+1 be started** — structurally, not just by convention. Nothing here touches git.
-   - **`reject_stage(target_stage, reason)`**: unticks the current stage (and any in between), adds a `RUN.md` Loop-backs row, reopens `target_stage`'s session (resuming its prior transcript if one exists). Also a plain file write, no commit.
+   - **`approve_stage`**: validates every declared output exists and is non-empty, auto-ticks the row if the model never did, and — this is the part the model's own tools can never do — appends the stage number to an `approved_stages:` list in `RUN.md`'s frontmatter. **The Done tick and approval are deliberately two different facts in two different places of the same file.** The model can tick a row (via `mark_ready_for_review`) to say a draft exists; only `approve_stage` can extend `approved_stages`, and no tool exposed to a model conversation ever touches it. **Only a stage number's presence in `approved_stages` gates a session for stage N+1** — a model ticking its own row must never be sufficient on its own to unlock the next stage. Nothing here touches git.
+   - **`reject_stage(target_stage, reason)`**: unticks the current stage and every stage back through `target_stage` inclusive, removes all of them from `approved_stages`, adds one `RUN.md` Loop-backs row. Reopening `target_stage`'s prior session (resuming its transcript) requires session rehydration from `.sessions/`, which is not yet built — see "Known gaps" below.
 
 The system validates structure — files exist, scope respected, gate order enforced — never quality. That judgment is exactly what the human check is for.
 
@@ -181,3 +181,13 @@ Localhost-only; no auth. Bind to `127.0.0.1`, never `0.0.0.0`.
 - The frontend (chat + document viewer/editor) and the export step (worksheet → downloadable eval build or audit report) are separate sub-projects, not covered here.
 - Whether `03-measure/`'s stages get the same frontmatter treatment, or whether that pipeline is out of scope for the web app's first version.
 - Whether to eventually support OpenRouter for per-stage model choice (e.g. a cheaper model for the mechanical stages 3–6). Direct Anthropic API is the starting point; nothing here forecloses adding a provider-abstraction layer later if that need becomes concrete.
+
+## Known gaps against this record (first implementation pass)
+
+The first implementation (see `docs/superpowers/plans/2026-09-09-orchestration-backend-plan.md` and its SDD ledger) built the `01-design` pipeline end to end, but the final whole-branch review found this record describes a few things the code doesn't yet do. Recorded here so the gap is explicit rather than discovered by surprise later:
+
+- **Session resumption isn't implemented.** `.sessions/<id>.jsonl` is written incrementally as designed, but nothing rehydrates a `StageRunner` from it — `GET /sessions/:id` only works against the in-process session that created it, and is lost on a server restart. §Persistence & resuming describes the target; the rehydrate path itself is unbuilt.
+- **`reject_stage` doesn't reopen the target stage's session** (it correctly rewrites `RUN.md`, but resuming `target_stage`'s prior transcript depends on the same rehydration path above).
+- **No `list_files` tool for directory-scoped inputs.** A stage whose contract declares a directory input (e.g. `08_build`'s `build/`, written by stages 3–6) has no way to enumerate what's in it — only to read a file it already knows the name of. Not exercised by this pass's tests, which stop at stage 2; needed before stage 08 is actually runnable through this backend.
+
+These three are scope decisions, not defects — each was deliberately left out of the first implementation pass's single fix wave rather than rushed in unreviewed. First candidates for the next plan against this record.
