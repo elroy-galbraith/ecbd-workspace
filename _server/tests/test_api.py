@@ -1,6 +1,8 @@
 # _server/tests/test_api.py
 from pathlib import Path
 
+import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -146,3 +148,79 @@ def test_get_run_404_for_unknown_slug(tmp_repo: Path):
     api = TestClient(app)
     response = api.get("/runs/design-nonexistent")
     assert response.status_code == 404
+
+
+def test_get_file_returns_content(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    run_root = tmp_repo / "worksheets" / "design-my-eval"
+    run_root.mkdir(parents=True)
+    (run_root / "01_intended-use.md").write_text("hello", encoding="utf-8")
+
+    response = api.get("/runs/design-my-eval/files/01_intended-use.md")
+    assert response.status_code == 200
+    assert response.json() == {"path": "01_intended-use.md", "content": "hello"}
+
+
+def test_get_file_404_for_missing_file(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    (tmp_repo / "worksheets" / "design-my-eval").mkdir(parents=True)
+
+    response = api.get("/runs/design-my-eval/files/nope.md")
+    assert response.status_code == 404
+
+
+def test_get_file_404_for_missing_run(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    response = api.get("/runs/design-nonexistent/files/nope.md")
+    assert response.status_code == 404
+
+
+def test_put_file_writes_content(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    run_root = tmp_repo / "worksheets" / "design-my-eval"
+    run_root.mkdir(parents=True)
+
+    response = api.put("/runs/design-my-eval/files/01_intended-use.md", json={"content": "edited by hand"})
+    assert response.status_code == 200
+    assert response.json() == {"path": "01_intended-use.md", "content": "edited by hand"}
+    assert (run_root / "01_intended-use.md").read_text(encoding="utf-8") == "edited by hand"
+
+
+def test_put_file_rejects_changing_approved_stages(tmp_repo: Path):
+    client_stage_1 = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "A faithfulness eval"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c2", name="write_file", input={"path": "01_intended-use.md", "content": "the intended use"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c3", name="mark_ready_for_review", input={})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="drafted")], stop_reason="end_turn"),
+    ])
+    app = create_app(model_client=client_stage_1, repo_root=tmp_repo)
+    api = TestClient(app)
+    api.post("/runs/design/start", json={"brief": "I need a faithfulness eval"})
+
+    run_md_path = tmp_repo / "worksheets" / "design-my-eval" / "RUN.md"
+    tampered = run_md_path.read_text(encoding="utf-8").replace("approved_stages: []", 'approved_stages: ["01"]')
+
+    response = api.put("/runs/design-my-eval/files/RUN.md", json={"content": tampered})
+    assert response.status_code == 400
+    assert "approved_stages" in run_md_path.read_text(encoding="utf-8")
+    assert '["01"]' not in run_md_path.read_text(encoding="utf-8")
+
+
+def test_resolve_run_file_rejects_path_traversal(tmp_repo: Path):
+    from app.main import _resolve_run_file
+
+    run_root = tmp_repo / "worksheets" / "design-my-eval"
+    run_root.mkdir(parents=True)
+    with pytest.raises(HTTPException):
+        _resolve_run_file(run_root, "../../CLAUDE.md")
+
+
+def test_cors_allows_the_vite_dev_origin(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    response = api.get("/runs", headers={"Origin": "http://localhost:5173"})
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
