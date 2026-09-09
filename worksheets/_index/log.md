@@ -13,3 +13,4 @@ The catalog: one line per run, added when the run folder is created. It records 
 | audit-gpqa | audit | GPQA fitness for model selection | 2026-09-07 | |
 | measure-gpqa | measure | Item-level psychometrics for audit-gpqa | 2026-09-07 | |
 | design-failure-mode-id | design | Can a model identify ECBD failure modes from benchmark docs | 2026-09-07 | |
+| design-faithfulness-summarization | design | Can a model summarize a short news article without introducing factual errors (faithfulness) | 2026-09-09 | |
