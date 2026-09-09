@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from .contract import ContractError
 from .scope import StageScope
 
@@ -27,6 +29,11 @@ class ScopedFilesystemTool:
 
     def write_file(self, path: str, content: str) -> None:
         target = self._resolve_or_raise(self.scope.resolve_writable, path)
+        if self._would_change_approval(target, content):
+            raise ScopeError(
+                "approved_stages in RUN.md can only be changed by "
+                "approve_stage/reject_stage, not by a model tool"
+            )
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
 
@@ -35,7 +42,13 @@ class ScopedFilesystemTool:
         text = target.read_text(encoding="utf-8") if target.exists() else ""
         if old not in text:
             raise ScopeError(f"text to replace was not found in '{path}'")
-        target.write_text(text.replace(old, new, 1), encoding="utf-8")
+        new_content = text.replace(old, new, 1)
+        if self._would_change_approval(target, new_content):
+            raise ScopeError(
+                "approved_stages in RUN.md can only be changed by "
+                "approve_stage/reject_stage, not by a model tool"
+            )
+        target.write_text(new_content, encoding="utf-8")
 
     @staticmethod
     def _resolve_or_raise(resolver, path: str):
@@ -43,3 +56,23 @@ class ScopedFilesystemTool:
             return resolver(path)
         except ContractError as exc:
             raise ScopeError(str(exc)) from exc
+
+    def _would_change_approval(self, target: Path, new_content: str) -> bool:
+        """True if writing new_content to target would change the value of
+        RUN.md's approved_stages: line. That line is a fact only
+        approve_stage/reject_stage (human-invoked, via approval.py) may
+        write -- never a model-exposed tool like write_file/edit_file."""
+        if target.name != "RUN.md":
+            return False
+        from .run_md import RunMdError, get_approved_stages
+
+        try:
+            current_content = target.read_text(encoding="utf-8") if target.exists() else ""
+            current = get_approved_stages(current_content)
+        except RunMdError:
+            current = None  # no approved_stages: line in the current content -- nothing to protect
+        try:
+            proposed = get_approved_stages(new_content)
+        except RunMdError:
+            proposed = None  # the edit would remove/corrupt the line entirely -- also protect against this
+        return current != proposed
