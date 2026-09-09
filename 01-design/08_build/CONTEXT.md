@@ -1,3 +1,45 @@
+---
+bootstrap: false
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+  - path: 03_content.md
+    relative_to: run
+    access: read
+  - path: 04_adaptation.md
+    relative_to: run
+    access: read
+  - path: 05_assembly.md
+    relative_to: run
+    access: read
+  - path: 06_evidence.md
+    relative_to: run
+    access: read
+  - path: 07_validity-register.md
+    relative_to: run
+    access: read
+  - path: 02_capability.md
+    relative_to: run
+    access: read
+  - path: build/
+    relative_to: run
+    access: read-write
+  - path: references/build-contract.md
+    relative_to: stage
+    access: read
+  - path: _shared/openeval-schema.md
+    relative_to: repo
+    access: read
+  - path: _shared/house-context.md
+    relative_to: repo
+    access: read
+    optional: true
+outputs:
+  - path: build/
+    relative_to: run
+---
+
 # 08_build — make it runnable
 
 One job: emit the eval the worksheet justifies, with every artefact traceable to the decision that produced it.

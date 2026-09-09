@@ -1,3 +1,35 @@
+---
+bootstrap: false
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+  - path: 03_content.md
+    relative_to: run
+    access: read
+  - path: 02_capability.md
+    relative_to: run
+    access: read
+  - path: 01_intended-use.md
+    relative_to: run
+    access: read
+  - path: _shared/worksheet-questions.md
+    relative_to: repo
+    access: read
+  - path: _shared/validity-evidence.md
+    relative_to: repo
+    access: read
+  - path: _shared/house-context.md
+    relative_to: repo
+    access: read
+    optional: true
+outputs:
+  - path: 04_adaptation.md
+    relative_to: run
+  - path: build/adaptation/
+    relative_to: run
+---
+
 # 04_adaptation — specify how objects are instructed
 
 One job: fix how every object of evaluation is prompted, configured, or adapted, so results are comparable and no object is disadvantaged.

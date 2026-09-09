@@ -1,3 +1,48 @@
+---
+bootstrap: false
+inputs:
+  - path: RUN.md
+    relative_to: run
+    access: read-write
+  - path: 01_intended-use.md
+    relative_to: run
+    access: read
+  - path: 02_capability.md
+    relative_to: run
+    access: read
+  - path: 03_content.md
+    relative_to: run
+    access: read
+  - path: 04_adaptation.md
+    relative_to: run
+    access: read
+  - path: 05_assembly.md
+    relative_to: run
+    access: read
+  - path: 06_evidence.md
+    relative_to: run
+    access: read
+  - path: _shared/failure-modes.md
+    relative_to: repo
+    access: read
+  - path: _shared/ecbd-framework.md
+    relative_to: repo
+    access: read
+  - path: _shared/validity-evidence.md
+    relative_to: repo
+    access: read
+  - path: _shared/worksheet-questions.md
+    relative_to: repo
+    access: read
+  - path: _shared/house-context.md
+    relative_to: repo
+    access: read
+    optional: true
+outputs:
+  - path: 07_validity-register.md
+    relative_to: run
+---
+
 # 07_validity-review — get honest about what this earns
 
 One job: audit the run's own SUPPORT answers, trace every capability end to end, and write the validity register.
