@@ -8,6 +8,8 @@ never committed to git, and the server binds to localhost only.
 
 Run tests from this directory: `python -m pytest tests/`.
 
-Run the server from this directory: `python -m app.main` (or `python
-app/main.py`). It binds to `127.0.0.1` only, on port 8000 — that bind is
-load-bearing, not incidental (see the decision record above).
+Run the server from this directory: `python -m app.main`. (Running it as
+`python app/main.py` fails — `main.py` uses package-relative imports, so
+it only works invoked as a module.) It binds to `127.0.0.1` only, on port
+8000 — that bind is load-bearing, not incidental (see the decision record
+above).
