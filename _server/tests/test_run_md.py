@@ -128,3 +128,86 @@ def test_remove_approved_stages_is_idempotent_for_absent_stages():
 def test_remove_approved_stages_raises_if_no_line_found():
     with pytest.raises(RunMdError):
         remove_approved_stages(SAMPLE, ["01"])
+
+
+from app.run_md import (
+    approved_stages_would_change,
+    parse_frontmatter,
+    parse_loop_backs,
+    parse_run_md,
+    parse_stage_table,
+)
+
+
+def test_parse_stage_table_parses_rows():
+    rows = parse_stage_table(SAMPLE)
+    assert rows == [
+        {"file": "01_intended-use.md", "stage": "01", "questions": "Framing, Q1–Q2", "done": False},
+        {"file": "02_capability.md", "stage": "02", "questions": "Q3–Q5", "done": False},
+    ]
+
+
+def test_parse_stage_table_reflects_a_tick():
+    ticked = tick_stage(SAMPLE, "01")
+    rows = parse_stage_table(ticked)
+    assert rows[0]["done"] is True
+    assert rows[1]["done"] is False
+
+
+def test_parse_loop_backs_empty_table():
+    assert parse_loop_backs(SAMPLE) == []
+
+
+def test_parse_loop_backs_parses_appended_rows():
+    result = add_loop_back(
+        SAMPLE,
+        date="2026-09-09",
+        from_stage="07",
+        back_to_stage="02",
+        forced_by="capability too vague",
+        what_changed="tightened the definition",
+    )
+    assert parse_loop_backs(result) == [
+        {
+            "date": "2026-09-09",
+            "from_stage": "07",
+            "back_to_stage": "02",
+            "forced_by": "capability too vague",
+            "what_changed": "tightened the definition",
+        }
+    ]
+
+
+def test_parse_frontmatter_reads_scalars():
+    fm = parse_frontmatter(FRONTMATTER_SAMPLE)
+    assert fm["status"] == "intake"
+    assert fm["slug"] == "design-my-eval"
+
+
+def test_parse_frontmatter_missing_block_raises():
+    with pytest.raises(RunMdError):
+        parse_frontmatter(SAMPLE)
+
+
+def test_parse_run_md_combines_frontmatter_table_and_loopbacks():
+    result = parse_run_md(FRONTMATTER_SAMPLE)
+    assert result["status"] == "intake"
+    assert result["approved_stages"] == []
+    assert result["stages"][0] == {
+        "file": "01_intended-use.md", "stage": "01", "questions": "Framing, Q1–Q2", "done": False,
+    }
+    assert result["loop_backs"] == []
+
+
+def test_approved_stages_would_change_true_when_list_changes():
+    changed = add_approved_stage(FRONTMATTER_SAMPLE, "01")
+    assert approved_stages_would_change(FRONTMATTER_SAMPLE, changed) is True
+
+
+def test_approved_stages_would_change_false_for_an_unrelated_edit():
+    other_edit = FRONTMATTER_SAMPLE.replace("# A run", "# A run (renamed)")
+    assert approved_stages_would_change(FRONTMATTER_SAMPLE, other_edit) is False
+
+
+def test_approved_stages_would_change_false_when_target_has_no_content_yet():
+    assert approved_stages_would_change("", FRONTMATTER_SAMPLE) is True

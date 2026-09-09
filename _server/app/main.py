@@ -6,12 +6,13 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .approval import ApprovalError, approve_stage, reject_stage
 from .contract import ContractError
 from .model_client import AnthropicModelClient, ModelClient
-from .run_md import get_approved_stages
+from .run_md import RunMdError, approved_stages_would_change, get_approved_stages, parse_run_md
 from .scope import load_stage_scope
 from .snapshot import SnapshotStore
 from .stage_runner import StageRunner, TruncatedResponseError
@@ -34,6 +35,17 @@ class RejectRequest(BaseModel):
     reason: str
 
 
+class FileWriteRequest(BaseModel):
+    content: str
+
+
+def _resolve_run_file(run_root: Path, file_path: str) -> Path:
+    target = (run_root / file_path).resolve()
+    if not target.is_relative_to(run_root.resolve()):
+        raise HTTPException(400, f"'{file_path}' escapes the run folder")
+    return target
+
+
 def _require_valid_stage(stage: str) -> None:
     if stage not in _STAGE_ORDER:
         raise HTTPException(404, f"no such stage '{stage}'")
@@ -42,6 +54,12 @@ def _require_valid_stage(stage: str) -> None:
 def create_app(model_client: ModelClient | None = None, repo_root: Path | None = None) -> FastAPI:
     repo_root = repo_root or Path(__file__).resolve().parents[2]
     app = FastAPI(title="ecbd-workspace orchestration backend")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     sessions: dict[str, StageRunner] = {}
 
     def get_model_client() -> ModelClient:
@@ -74,6 +92,15 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
             cols = [c.strip() for c in line.strip("|").split("|")]
             rows.append({"slug": cols[0], "mode": cols[1], "subject": cols[2], "opened": cols[3]})
         return rows
+
+    @app.get("/runs/{slug}")
+    def get_run(slug: str) -> dict[str, Any]:
+        text = run_stage_table(slug)
+        try:
+            parsed = parse_run_md(text)
+        except RunMdError as exc:
+            raise HTTPException(500, str(exc)) from exc
+        return {"slug": slug, **parsed}
 
     def _start_session(pipeline: str, stage: str, run_root: Path | None, brief: str) -> str:
         try:
@@ -195,6 +222,33 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
             snapshots.capture(spec.path, "")
             combined.append(snapshots.diff(spec.path, current))
         return {"diff": "\n".join(combined)}
+
+    @app.get("/runs/{slug}/files/{file_path:path}")
+    def get_file(slug: str, file_path: str) -> dict[str, str]:
+        run_root = repo_root / "worksheets" / slug
+        if not run_root.exists():
+            raise HTTPException(404, f"run '{slug}' does not exist")
+        target = _resolve_run_file(run_root, file_path)
+        if not target.exists() or not target.is_file():
+            raise HTTPException(404, f"'{file_path}' does not exist in run '{slug}'")
+        return {"path": file_path, "content": target.read_text(encoding="utf-8")}
+
+    @app.put("/runs/{slug}/files/{file_path:path}")
+    def put_file(slug: str, file_path: str, req: FileWriteRequest) -> dict[str, str]:
+        run_root = repo_root / "worksheets" / slug
+        if not run_root.exists():
+            raise HTTPException(404, f"run '{slug}' does not exist")
+        target = _resolve_run_file(run_root, file_path)
+        if target.name == "RUN.md":
+            current = target.read_text(encoding="utf-8") if target.exists() else ""
+            if approved_stages_would_change(current, req.content):
+                raise HTTPException(
+                    400,
+                    "approved_stages in RUN.md can only be changed by approve/reject, not a direct file edit",
+                )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(req.content, encoding="utf-8")
+        return {"path": file_path, "content": req.content}
 
     return app
 

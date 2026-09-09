@@ -64,15 +64,7 @@ class ScopedFilesystemTool:
         write -- never a model-exposed tool like write_file/edit_file."""
         if target.name != "RUN.md":
             return False
-        from .run_md import RunMdError, get_approved_stages
+        from .run_md import approved_stages_would_change
 
-        try:
-            current_content = target.read_text(encoding="utf-8") if target.exists() else ""
-            current = get_approved_stages(current_content)
-        except RunMdError:
-            current = None  # no approved_stages: line in the current content -- nothing to protect
-        try:
-            proposed = get_approved_stages(new_content)
-        except RunMdError:
-            proposed = None  # the edit would remove/corrupt the line entirely -- also protect against this
-        return current != proposed
+        current_content = target.read_text(encoding="utf-8") if target.exists() else ""
+        return approved_stages_would_change(current_content, new_content)
