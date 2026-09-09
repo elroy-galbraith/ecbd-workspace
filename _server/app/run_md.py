@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import yaml
 
 
 class RunMdError(Exception):
@@ -59,6 +60,83 @@ def _format_stage_list(stages: list[str]) -> str:
 def get_approved_stages(text: str) -> list[str]:
     match = _approved_stages_match(text)
     return _parse_stage_list(match.group(2))
+
+
+def parse_frontmatter(text: str) -> dict:
+    if not text.startswith("---\n"):
+        raise RunMdError("RUN.md is missing a frontmatter block")
+    end = text.find("\n---", 4)
+    if end == -1:
+        raise RunMdError("RUN.md frontmatter block is not terminated")
+    return yaml.safe_load(text[4:end]) or {}
+
+
+_STAGE_ROW_RE = re.compile(
+    r"^\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|\s*([^|]*)\|\s*\[([ xX])\]\s*\|\s*$",
+    re.MULTILINE,
+)
+
+
+def parse_stage_table(text: str) -> list[dict]:
+    return [
+        {
+            "file": m.group(1),
+            "stage": m.group(2),
+            "questions": m.group(3).strip(),
+            "done": m.group(4).lower() == "x",
+        }
+        for m in _STAGE_ROW_RE.finditer(text)
+    ]
+
+
+_LOOPBACK_ROW_RE = re.compile(
+    r"^\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*([^|]*)\|\s*$",
+    re.MULTILINE,
+)
+
+
+def parse_loop_backs(text: str) -> list[dict]:
+    idx = text.find(_LOOPBACK_HEADER)
+    if idx == -1:
+        return []
+    after = text[idx + len(_LOOPBACK_HEADER):]
+    return [
+        {
+            "date": cols[0], "from_stage": cols[1], "back_to_stage": cols[2],
+            "forced_by": cols[3], "what_changed": cols[4],
+        }
+        for m in _LOOPBACK_ROW_RE.finditer(after)
+        for cols in [[g.strip() for g in m.groups()]]
+    ]
+
+
+def parse_run_md(text: str) -> dict:
+    frontmatter = parse_frontmatter(text)
+    return {
+        "status": frontmatter.get("status"),
+        "opened": frontmatter.get("opened"),
+        "closed": frontmatter.get("closed"),
+        "approved_stages": get_approved_stages(text),
+        "stages": parse_stage_table(text),
+        "loop_backs": parse_loop_backs(text),
+    }
+
+
+def approved_stages_would_change(current_content: str, new_content: str) -> bool:
+    """True if writing new_content would change the parsed approved_stages
+    list relative to current_content. Shared by ScopedFilesystemTool (blocks
+    model-tool writes to RUN.md) and the file-edit API (blocks direct human
+    writes) so both enforce the same invariant: approved_stages changes only
+    through approve_stage/reject_stage."""
+    try:
+        current = get_approved_stages(current_content)
+    except RunMdError:
+        current = None
+    try:
+        proposed = get_approved_stages(new_content)
+    except RunMdError:
+        proposed = None
+    return current != proposed
 
 
 def add_approved_stage(text: str, stage: str) -> str:
