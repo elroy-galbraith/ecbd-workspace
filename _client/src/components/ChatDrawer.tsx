@@ -20,7 +20,7 @@ export function ChatDrawer({ runKey, stage, startSession, onSessionId }: ChatDra
   const [startError, setStartError] = useState<string | null>(null);
 
   const session = useSession(sessionId ?? undefined);
-  const sendMessage = useSendMessage(sessionId ?? "");
+  const sendMessage = useSendMessage(sessionId ?? "", runKey);
 
   const sessionGone = session.isError && session.error instanceof ApiError && session.error.status === 404;
 

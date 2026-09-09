@@ -20,8 +20,10 @@ vi.mock("../api/client", () => ({
 }));
 
 const mockStoreSessionId = vi.fn();
+const mockClearSessionId = vi.fn();
 vi.mock("../lib/sessionStorage", () => ({
   storeSessionId: (...args: unknown[]) => mockStoreSessionId(...args),
+  clearSessionId: (...args: unknown[]) => mockClearSessionId(...args),
 }));
 
 vi.mock("../components/ChatDrawer", () => ({
@@ -59,6 +61,7 @@ describe("NewRunPage", () => {
     await userEvent.click(screen.getByRole("button", { name: /check for created run/i }));
 
     expect(mockStoreSessionId).toHaveBeenCalledWith("design-my-eval", "01", "sess-new");
+    expect(mockClearSessionId).toHaveBeenCalledWith("new", "01");
     expect(await screen.findByText(/landed on the new run's stage page/i)).toBeInTheDocument();
   });
 
@@ -76,5 +79,21 @@ describe("NewRunPage", () => {
     await userEvent.click(screen.getByRole("button", { name: /check for created run/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/no new run yet/i);
+  });
+
+  it("shows an error banner when the check itself fails", async () => {
+    render(
+      <MemoryRouter initialEntries={["/runs/new"]}>
+        <Routes>
+          <Route path="/runs/new" element={<NewRunPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /simulate session start/i }));
+    mockApiGet.mockRejectedValue(new Error("network down"));
+    await userEvent.click(screen.getByRole("button", { name: /check for created run/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/network down/i);
   });
 });

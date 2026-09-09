@@ -5,7 +5,7 @@ import { useStartRun } from "../api/mutations";
 import { api } from "../api/client";
 import type { RunSummary } from "../api/types";
 import { ChatDrawer } from "../components/ChatDrawer";
-import { storeSessionId } from "../lib/sessionStorage";
+import { clearSessionId, storeSessionId } from "../lib/sessionStorage";
 
 export function NewRunPage() {
   const { data: runsBeforeStart } = useRuns();
@@ -30,10 +30,13 @@ export function NewRunPage() {
       const created = runs.find((run) => !knownSlugs.has(run.slug));
       if (created) {
         storeSessionId(created.slug, "01", sessionId);
+        clearSessionId("new", "01");
         navigate(`/runs/${created.slug}/stages/01`);
       } else {
         setCheckError("No new run yet — keep chatting, then check again once it's created.");
       }
+    } catch (err) {
+      setCheckError(err instanceof Error ? err.message : "failed to check for a new run");
     } finally {
       setChecking(false);
     }

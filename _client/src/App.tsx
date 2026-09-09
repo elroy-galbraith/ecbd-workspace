@@ -16,13 +16,18 @@ function RunRedirect() {
   return <Navigate to={`/runs/${slug}/stages/${stage}`} replace />;
 }
 
+function KeyedStagePage() {
+  const { slug, stage } = useParams<{ slug: string; stage: string }>();
+  return <StagePage key={`${slug}/${stage}`} />;
+}
+
 export function App() {
   return (
     <Routes>
       <Route path="/" element={<RunListPage />} />
       <Route path="/runs/new" element={<NewRunPage />} />
       <Route path="/runs/:slug" element={<RunRedirect />} />
-      <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
+      <Route path="/runs/:slug/stages/:stage" element={<KeyedStagePage />} />
     </Routes>
   );
 }

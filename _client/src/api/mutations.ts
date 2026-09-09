@@ -15,12 +15,15 @@ export function useStartStage(slug: string, stage: string) {
   });
 }
 
-export function useSendMessage(sessionId: string) {
+export function useSendMessage(sessionId: string, slug?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (brief: string) => api.post<{ reply: string }>(`/sessions/${sessionId}/messages`, { brief }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
+      if (slug) {
+        queryClient.invalidateQueries({ queryKey: ["file", slug] });
+      }
     },
   });
 }

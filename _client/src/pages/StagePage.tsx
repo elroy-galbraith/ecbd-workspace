@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useRun, useSession, useStageDiff } from "../api/queries";
 import { useApproveStage, useRejectStage, useStartStage } from "../api/mutations";
@@ -9,7 +9,7 @@ import { ReviewBanner } from "../components/ReviewBanner";
 import { DiffView } from "../components/DiffView";
 import { RejectDialog } from "../components/RejectDialog";
 import { ChatDrawer } from "../components/ChatDrawer";
-import { loadSessionId } from "../lib/sessionStorage";
+import { clearSessionId, loadSessionId } from "../lib/sessionStorage";
 
 export function StagePage() {
   const { slug, stage } = useParams<{ slug: string; stage: string }>();
@@ -18,10 +18,6 @@ export function StagePage() {
   const [sessionId, setSessionId] = useState<string | null>(() =>
     slug && stage ? loadSessionId(slug, stage) : null,
   );
-
-  useEffect(() => {
-    setSessionId(slug && stage ? loadSessionId(slug, stage) : null);
-  }, [slug, stage]);
 
   const run = useRun(slug);
   const startStage = useStartStage(slug ?? "", stage ?? "");
@@ -37,6 +33,7 @@ export function StagePage() {
 
   const currentRow = run.data.stages.find((row) => row.stage === stage);
   const readyForReview = session.data?.ready_for_review ?? false;
+  const stageOrder = run.data.stages.map((row) => row.stage);
 
   return (
     <div className="stage-page">
@@ -62,7 +59,20 @@ export function StagePage() {
             <RejectDialog
               approvedStages={run.data.approved_stages}
               currentStage={stage}
-              onSubmit={(input) => reject.mutate(input, { onSuccess: () => setShowReject(false) })}
+              onSubmit={(input) =>
+                reject.mutate(input, {
+                  onSuccess: () => {
+                    setShowReject(false);
+                    const targetIndex = stageOrder.indexOf(input.target_stage);
+                    const currentIndex = stageOrder.indexOf(stage);
+                    if (targetIndex !== -1 && currentIndex !== -1) {
+                      for (const s of stageOrder.slice(targetIndex, currentIndex + 1)) {
+                        clearSessionId(slug, s);
+                      }
+                    }
+                  },
+                })
+              }
               onCancel={() => setShowReject(false)}
             />
           )}
