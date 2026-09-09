@@ -122,7 +122,7 @@ An out-of-scope path request returns a tool **error**, surfaced to the model to 
 
 ## Persistence & resuming
 
-Each stage session's transcript is `worksheets/<slug>/.sessions/<stage>.jsonl` (one line per turn), **gitignored** — this is resumability state, not a worksheet artefact, and conflating it with `RUN.md` would break this workspace's existing claim that `RUN.md` is the only file recording a run's state. Resume = reload the file, replay into memory, continue; nothing needs redoing since prior tool calls are already recorded as results.
+Each stage session's transcript is `.sessions/<session-id>.jsonl` (one line per turn) at the repo root, **gitignored** — a top-level, session-id-keyed location rather than nested under the run folder, because a bootstrap session (stage 1) exists before its run folder does. This is resumability state, not a worksheet artefact, and conflating it with `RUN.md` would break this workspace's existing claim that `RUN.md` is the only file recording a run's state. Resume = reload the file, replay into memory, continue; nothing needs redoing since prior tool calls are already recorded as results.
 
 The one race worth guarding: the contract invites direct human edits to the same files the model writes. Once `mark_ready_for_review()` fires, the Stage Runner stops accepting model-initiated writes to that stage's outputs until the human sends another message reopening it.
 
@@ -171,7 +171,7 @@ Localhost-only; no auth. Bind to `127.0.0.1`, never `0.0.0.0`.
 ## Consequences
 
 - Every existing stage `CONTEXT.md` needs a frontmatter block added before this backend can run against it — mechanical, but touches all 14+ stage contracts across `01-design/` and `02-audit/` (and `03-measure/` if that pipeline is included later).
-- `.sessions/` lives inside a run folder, which is already gitignored (`worksheets/*/`) — no separate `.gitignore` entry needed.
+- A top-level `.sessions/` directory needs adding to `.gitignore`.
 - The workspace's "loading discipline" rule moves from a norm you can watch enforced in a terminal to a technical constraint enforced in code — stricter than today's Claude Code sessions, which could technically read outside a contract's Inputs if the model chose to.
 - Because the backend never commits worksheet content, there is no built-in recovery if you edit or delete a run folder by mistake — same as today. The backend does not change this workspace's existing stance that runs need a backup outside this repo if they matter; it must not invent one via git without you deciding that separately.
 - Running localhost-only means this design carries no auth, no CORS hardening beyond the default same-origin behavior, and no concern for concurrent remote clients. If a later need ever pushes this off of localhost (e.g. onto a private home server), auth and network hardening become required additions — not covered by this record.
