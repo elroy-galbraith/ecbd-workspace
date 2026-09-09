@@ -56,6 +56,30 @@ def test_full_stage_1_to_stage_2_flow_with_a_loop_back(tmp_repo: Path):
     assert "intended use was too vague" in run_md
 
 
+def test_mark_ready_for_review_alone_does_not_unlock_stage_2(tmp_repo: Path):
+    # The model ticks its own row via mark_ready_for_review, but nobody ever
+    # calls POST .../approve. Stage 2 must stay locked -- this is the
+    # negative case a "tick == approved" bug would let slip through.
+    client_stage_1 = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "A faithfulness eval"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c2", name="write_file", input={"path": "01_intended-use.md", "content": "the intended use, spelled out"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c3", name="mark_ready_for_review", input={})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="drafted, ready for review")], stop_reason="end_turn"),
+    ])
+    app = create_app(model_client=client_stage_1, repo_root=tmp_repo)
+    api = TestClient(app)
+
+    start = api.post("/runs/design/start", json={"brief": "I need a faithfulness eval"})
+    assert start.status_code == 200
+
+    run_md = (tmp_repo / "worksheets" / "design-my-eval" / "RUN.md").read_text()
+    assert "[x]" in run_md  # the model's own tick is present ...
+    assert "approved_stages: []" in run_md  # ... but nothing approved it
+
+    response = api.post("/runs/design-my-eval/stages/02/start", json={"brief": "go"})
+    assert 400 <= response.status_code < 500
+
+
 def test_start_stage_2_before_stage_1_is_approved_is_rejected(tmp_repo: Path):
     app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
     api = TestClient(app)

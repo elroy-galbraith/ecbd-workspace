@@ -29,6 +29,54 @@ def untick_stage(text: str, stage: str) -> str:
     return "".join(lines)
 
 
+_APPROVED_STAGES_RE = re.compile(r"^(\s*approved_stages:\s*)\[(.*?)\](\s*)$", re.MULTILINE)
+
+
+def _approved_stages_match(text: str) -> re.Match:
+    match = _APPROVED_STAGES_RE.search(text)
+    if match is None:
+        raise RunMdError("'approved_stages:' line not found in RUN.md frontmatter")
+    return match
+
+
+def _parse_stage_list(inner: str) -> list[str]:
+    inner = inner.strip()
+    if not inner:
+        return []
+    stages = []
+    for item in inner.split(","):
+        item = item.strip()
+        if len(item) >= 2 and item[0] == item[-1] and item[0] in "\"'":
+            item = item[1:-1]
+        stages.append(item)
+    return stages
+
+
+def _format_stage_list(stages: list[str]) -> str:
+    return ", ".join(f'"{s}"' for s in stages)
+
+
+def get_approved_stages(text: str) -> list[str]:
+    match = _approved_stages_match(text)
+    return _parse_stage_list(match.group(2))
+
+
+def add_approved_stage(text: str, stage: str) -> str:
+    match = _approved_stages_match(text)
+    stages = _parse_stage_list(match.group(2))
+    if stage not in stages:
+        stages.append(stage)
+    new_line = f"{match.group(1)}[{_format_stage_list(stages)}]{match.group(3)}"
+    return text[: match.start()] + new_line + text[match.end() :]
+
+
+def remove_approved_stages(text: str, stages: list[str]) -> str:
+    match = _approved_stages_match(text)
+    remaining = [s for s in _parse_stage_list(match.group(2)) if s not in stages]
+    new_line = f"{match.group(1)}[{_format_stage_list(remaining)}]{match.group(3)}"
+    return text[: match.start()] + new_line + text[match.end() :]
+
+
 _LOOPBACK_HEADER = (
     "| Date | From stage | Back to stage | What forced it | What changed |\n"
     "|---|---|---|---|---|\n"

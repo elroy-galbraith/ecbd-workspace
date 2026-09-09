@@ -4,6 +4,7 @@ mode: design
 status: intake          # lifecycle values and their meaning: worksheets/CONTEXT.md
 objects_of_evaluation: []
 capabilities: []
+approved_stages: []
 opened: YYYY-MM-DD
 closed:
 owner:

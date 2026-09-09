@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from .approval import ApprovalError, approve_stage, reject_stage
 from .contract import ContractError
 from .model_client import AnthropicModelClient, ModelClient
+from .run_md import get_approved_stages
 from .scope import load_stage_scope
 from .snapshot import SnapshotStore
 from .stage_runner import StageRunner
@@ -56,11 +57,8 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         return run_md.read_text(encoding="utf-8")
 
     def stage_is_approved(slug: str, stage: str) -> bool:
-        from .run_md import _find_stage_line_index
-
-        lines = run_stage_table(slug).splitlines()
-        idx = _find_stage_line_index(lines, stage)
-        return "[x]" in lines[idx]
+        text = run_stage_table(slug)
+        return stage in get_approved_stages(text)
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -146,10 +144,19 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
     @app.post("/runs/{slug}/stages/{stage}/reject")
     def reject(slug: str, stage: str, req: RejectRequest) -> dict[str, str]:
         _require_valid_stage(stage)
+        _require_valid_stage(req.target_stage)
         run_root = repo_root / "worksheets" / slug
+        stage_index = _STAGE_ORDER.index(stage)
+        target_index = _STAGE_ORDER.index(req.target_stage)
+        stages_to_untick = _STAGE_ORDER[target_index : stage_index + 1]
         try:
             scope = load_stage_scope(stage_contract_path(stage), repo_root=repo_root, run_root=run_root)
-            reject_stage(scope, from_stage=stage, target_stage=req.target_stage, reason=req.reason)
+            reject_stage(
+                scope,
+                stages_to_untick=stages_to_untick,
+                target_stage=req.target_stage,
+                reason=req.reason,
+            )
         except ContractError as exc:
             raise HTTPException(400, str(exc)) from exc
         return {"status": "rejected"}

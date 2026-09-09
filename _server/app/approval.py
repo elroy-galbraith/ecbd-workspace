@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from .run_md import add_loop_back, tick_stage, untick_stage
+from .run_md import add_approved_stage, add_loop_back, remove_approved_stages, tick_stage, untick_stage
 from .scope import StageScope
 
 
@@ -42,7 +42,9 @@ def approve_stage(scope: StageScope, stage_number: str) -> ApprovalResult:
 
     run_md_path = _run_md_path(scope)
     text = run_md_path.read_text(encoding="utf-8")
-    run_md_path.write_text(tick_stage(text, stage_number), encoding="utf-8")
+    text = tick_stage(text, stage_number)
+    text = add_approved_stage(text, stage_number)
+    run_md_path.write_text(text, encoding="utf-8")
 
     return ApprovalResult(
         approved_stage=stage_number,
@@ -50,14 +52,18 @@ def approve_stage(scope: StageScope, stage_number: str) -> ApprovalResult:
     )
 
 
-def reject_stage(scope: StageScope, from_stage: str, target_stage: str, reason: str) -> None:
+def reject_stage(
+    scope: StageScope, stages_to_untick: list[str], target_stage: str, reason: str
+) -> None:
     run_md_path = _run_md_path(scope)
     text = run_md_path.read_text(encoding="utf-8")
-    text = untick_stage(text, from_stage)
+    for stage in stages_to_untick:
+        text = untick_stage(text, stage)
+    text = remove_approved_stages(text, stages_to_untick)
     text = add_loop_back(
         text,
         date=date.today().isoformat(),
-        from_stage=from_stage,
+        from_stage=stages_to_untick[-1],
         back_to_stage=target_stage,
         forced_by=reason,
         what_changed="pending",
