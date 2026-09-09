@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { StagePage } from "./StagePage";
 
 const mockUseRun = vi.fn();
@@ -13,8 +14,9 @@ vi.mock("../api/queries", () => ({
   useRunFile: () => ({ data: undefined, isLoading: true, isError: false }),
 }));
 
+const mockStartStageMutateAsync = vi.fn();
 vi.mock("../api/mutations", () => ({
-  useStartStage: () => ({ mutateAsync: vi.fn() }),
+  useStartStage: () => ({ mutateAsync: mockStartStageMutateAsync }),
   useApproveStage: () => ({ mutate: vi.fn(), isPending: false }),
   useRejectStage: () => ({ mutate: vi.fn() }),
   useSaveFile: () => ({ mutate: vi.fn(), isPending: false }),
@@ -90,5 +92,36 @@ describe("StagePage", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("alert")).toBeInTheDocument();
+  });
+
+  it("picks up a newly-started chat session without needing an unrelated re-render", async () => {
+    // loadSessionId is mocked to return null, so ChatDrawer starts in its
+    // "no session yet" state and renders the start form. Driving that form
+    // through startSession (-> useStartStage().mutateAsync, resolved here)
+    // exercises ChatDrawer's real onSessionId callback, which StagePage
+    // must be wired to for its own `sessionId` state to update.
+    mockStartStageMutateAsync.mockResolvedValue({ session_id: "new-session-id" });
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={["/runs/design-my-eval/stages/02"]}>
+        <Routes>
+          <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    // Before starting a session, StagePage's useSession call is disabled
+    // (sessionId is undefined).
+    expect(mockUseSession.mock.calls.some(([arg]) => arg !== undefined)).toBe(false);
+
+    await user.type(screen.getByPlaceholderText(/say what you need/i), "let's design an eval");
+    await user.click(screen.getByRole("button", { name: /^start$/i }));
+
+    expect(mockStartStageMutateAsync).toHaveBeenCalledWith("let's design an eval");
+
+    // Once ChatDrawer's onSessionId fires, StagePage's own sessionId state
+    // must update, which re-invokes useSession with a defined session id.
+    expect(mockUseSession.mock.calls.some(([arg]) => arg === "new-session-id")).toBe(true);
   });
 });

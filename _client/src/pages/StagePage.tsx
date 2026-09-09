@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useRun, useSession, useStageDiff } from "../api/queries";
 import { useApproveStage, useRejectStage, useStartStage } from "../api/mutations";
@@ -15,13 +15,19 @@ export function StagePage() {
   const { slug, stage } = useParams<{ slug: string; stage: string }>();
   const [showDiff, setShowDiff] = useState(false);
   const [showReject, setShowReject] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(() =>
+    slug && stage ? loadSessionId(slug, stage) : null,
+  );
+
+  useEffect(() => {
+    setSessionId(slug && stage ? loadSessionId(slug, stage) : null);
+  }, [slug, stage]);
 
   const run = useRun(slug);
   const startStage = useStartStage(slug ?? "", stage ?? "");
   const approve = useApproveStage(slug ?? "", stage ?? "");
   const reject = useRejectStage(slug ?? "", stage ?? "");
 
-  const sessionId = slug && stage ? loadSessionId(slug, stage) : null;
   const session = useSession(sessionId ?? undefined);
   const diff = useStageDiff(showDiff ? slug : undefined, showDiff ? stage : undefined);
 
@@ -63,7 +69,12 @@ export function StagePage() {
           {currentRow && <DocumentPane slug={slug} file={currentRow.file} />}
         </main>
       </div>
-      <ChatDrawer runKey={slug} stage={stage} startSession={(brief) => startStage.mutateAsync(brief)} />
+      <ChatDrawer
+        runKey={slug}
+        stage={stage}
+        startSession={(brief) => startStage.mutateAsync(brief)}
+        onSessionId={setSessionId}
+      />
     </div>
   );
 }
