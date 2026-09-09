@@ -7,6 +7,11 @@ import subprocess
 from pathlib import Path
 
 
+class LogIndexError(Exception):
+    """Raised when git operations on the log index fail."""
+    pass
+
+
 def append_run(repo_root: Path, slug: str, mode: str, subject: str, opened: str) -> None:
     log_path = repo_root / "worksheets" / "_index" / "log.md"
     text = log_path.read_text(encoding="utf-8")
@@ -18,8 +23,19 @@ def append_run(repo_root: Path, slug: str, mode: str, subject: str, opened: str)
 
 def commit_log_index(repo_root: Path, slug: str) -> None:
     rel_path = "worksheets/_index/log.md"
-    subprocess.run(["git", "add", rel_path], cwd=repo_root, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "commit", "-m", f"Add {slug} to the run log"],
-        cwd=repo_root, check=True, capture_output=True,
-    )
+    try:
+        subprocess.run(["git", "add", rel_path], cwd=repo_root, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise LogIndexError(
+            f"Failed to stage {rel_path}: {e.stderr.decode('utf-8', errors='replace')}"
+        ) from e
+
+    try:
+        subprocess.run(
+            ["git", "commit", "-m", f"Add {slug} to the run log"],
+            cwd=repo_root, check=True, capture_output=True,
+        )
+    except subprocess.CalledProcessError as e:
+        raise LogIndexError(
+            f"Failed to commit {rel_path}: {e.stderr.decode('utf-8', errors='replace')}"
+        ) from e

@@ -1,6 +1,8 @@
 import pytest
+from unittest.mock import patch
 
 from app.create_run import CreateRunError, create_run
+from app.log_index import LogIndexError
 
 
 def test_creates_run_folder_from_template(tmp_repo):
@@ -33,3 +35,21 @@ def test_colliding_slug_raises(tmp_repo):
 def test_unsupported_pipeline_raises(tmp_repo):
     with pytest.raises(CreateRunError):
         create_run(tmp_repo, "audit", "my-eval", "A test eval")
+
+
+def test_cleanup_on_post_copy_failure(tmp_repo):
+    """Verify that if post-copy steps fail, the run folder is cleaned up.
+
+    This prevents the slug from becoming permanently blocked on transient errors,
+    allowing a caller to retry with the same slug after a failure."""
+    with patch("app.create_run.log_index.commit_log_index", side_effect=LogIndexError("Mock git failure")):
+        with pytest.raises(LogIndexError):
+            create_run(tmp_repo, "design", "cleanup-test", "A test eval")
+
+    # Verify the run folder was cleaned up
+    run_root = tmp_repo / "worksheets" / "design-cleanup-test"
+    assert not run_root.exists(), "Run folder should be deleted after post-copy failure"
+
+    # Verify retry is possible with the same slug
+    run_root = create_run(tmp_repo, "design", "cleanup-test", "A test eval")
+    assert run_root.exists(), "Retry with same slug should succeed after cleanup"

@@ -31,13 +31,22 @@ def create_run(repo_root: Path, pipeline: str, slug: str, subject: str) -> Path:
         raise CreateRunError(f"template folder missing: {template_root}")
     shutil.copytree(template_root, run_root)
 
-    opened = date.today().isoformat()
-    run_md_path = run_root / "RUN.md"
-    text = run_md_path.read_text(encoding="utf-8")
-    text = text.replace(f"slug: {pipeline}-<kebab-slug>", f"slug: {full_slug}", 1)
-    text = text.replace("opened: YYYY-MM-DD", f"opened: {opened}", 1)
-    run_md_path.write_text(text, encoding="utf-8")
+    try:
+        opened = date.today().isoformat()
+        run_md_path = run_root / "RUN.md"
+        text = run_md_path.read_text(encoding="utf-8")
+        text = text.replace(f"slug: {pipeline}-<kebab-slug>", f"slug: {full_slug}", 1)
+        text = text.replace("opened: YYYY-MM-DD", f"opened: {opened}", 1)
+        run_md_path.write_text(text, encoding="utf-8")
 
-    log_index.append_run(repo_root, full_slug, pipeline, subject, opened)
-    log_index.commit_log_index(repo_root, full_slug)
+        log_index.append_run(repo_root, full_slug, pipeline, subject, opened)
+        log_index.commit_log_index(repo_root, full_slug)
+    except Exception:
+        # Best-effort cleanup: remove the partially-created run folder on any post-copy failure.
+        # This prevents the slug from becoming permanently "blocked" on transient errors.
+        # Residual risk: a failure during the log-index step may leave an uncommitted change
+        # to worksheets/_index/log.md (this cleanup does not attempt to revert that).
+        shutil.rmtree(run_root, ignore_errors=True)
+        raise
+
     return run_root
