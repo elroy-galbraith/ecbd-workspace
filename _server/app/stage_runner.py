@@ -12,8 +12,9 @@ from typing import Any
 from .contract import ContractError
 from .create_run import CreateRunError, create_run
 from .fs_tool import ScopedFilesystemTool, ScopeError
+from .log_index import LogIndexError
 from .model_client import ModelClient, ModelResponse, TextBlock, ToolUseBlock
-from .run_md import tick_stage
+from .run_md import RunMdError, tick_stage
 from .scope import StageScope
 from .transcript import TranscriptStore
 
@@ -140,7 +141,7 @@ class StageRunner:
             if call.name == "create_run":
                 return self._create_run(call)
             return _ToolResult(call.id, f"unknown tool '{call.name}'", is_error=True)
-        except (ScopeError, ContractError, CreateRunError) as exc:
+        except (ScopeError, ContractError, CreateRunError, RunMdError, LogIndexError) as exc:
             return _ToolResult(call.id, str(exc), is_error=True)
 
     def _mark_ready_for_review(self, call: ToolUseBlock) -> _ToolResult:

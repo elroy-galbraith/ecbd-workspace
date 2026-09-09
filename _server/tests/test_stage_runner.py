@@ -108,6 +108,34 @@ def test_tool_error_is_reported_back_to_the_model_not_raised(tmp_repo: Path, tmp
     assert tool_result_turn["content"][0]["is_error"] is True
 
 
+def test_run_md_error_is_reported_back_to_the_model_not_raised(tmp_repo: Path, tmp_path: Path):
+    # stage_number "99" has no row in RUN.md's stage table, so tick_stage()
+    # raises RunMdError from inside _mark_ready_for_review. That must be
+    # caught by _dispatch and reported to the model, not propagated out of
+    # send() and crash the conversation loop.
+    client = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "subj"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c2", name="mark_ready_for_review", input={})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="hit a snag marking ready")], stop_reason="end_turn"),
+    ])
+    runner = StageRunner(
+        scope=_stage_01_scope(tmp_repo),
+        model_client=client,
+        transcript=TranscriptStore(tmp_path / "session.jsonl"),
+        repo_root=tmp_repo,
+        pipeline="design",
+        stage_number="99",
+    )
+
+    reply = runner.send("go")
+
+    assert reply == "hit a snag marking ready"
+    assert runner.ready_for_review is False
+    turns = TranscriptStore(tmp_path / "session.jsonl").read_all()
+    tool_result_turn = turns[4]
+    assert tool_result_turn["content"][0]["is_error"] is True
+
+
 def test_runaway_tool_loop_raises_iteration_limit(tmp_repo: Path, tmp_path: Path):
     responses = [
         ModelResponse(content=[ToolUseBlock(id=f"c{i}", name="read_file", input={"path": "_shared/ecbd-framework.md"})], stop_reason="tool_use")
