@@ -23,3 +23,7 @@ worksheets/*/
 # Orchestration backend: session transcripts, never committed
 .sessions/
 _server/.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
