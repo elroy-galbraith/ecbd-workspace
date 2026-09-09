@@ -32,7 +32,7 @@ def commit_log_index(repo_root: Path, slug: str) -> None:
 
     try:
         subprocess.run(
-            ["git", "commit", "-m", f"Add {slug} to the run log"],
+            ["git", "commit", "-m", f"Add {slug} to the run log", "--", rel_path],
             cwd=repo_root, check=True, capture_output=True,
         )
     except subprocess.CalledProcessError as e:
