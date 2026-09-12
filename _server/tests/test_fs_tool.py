@@ -80,6 +80,57 @@ def test_edit_file_missing_old_text_raises(tool: ScopedFilesystemTool):
         tool.edit_file("02_capability.md", "not present", "new")
 
 
+# --- write_file overwrite guard --------------------------------------------
+#
+# write_file replacing a document's entire content is how a small requested
+# change can silently collapse everything else in it. edit_file exists for
+# targeted changes; this guard makes a *second* write_file to a path this
+# session already put real content in refuse to stand in for one, once the
+# new content barely resembles what this session wrote there. A stage's
+# very first write_file to an output is exempt -- that call is normally
+# replacing the run template's placeholder scaffolding, which is expected
+# and not the risky case.
+
+
+def test_write_file_allows_first_draft_regardless_of_prior_scaffold_content(
+    tool: ScopedFilesystemTool, tmp_path: Path
+):
+    written = tmp_path / "worksheets" / "design-test" / "02_capability.md"
+    written.write_text("# Capability\n\nStage: ...\n\n" + ("[ANSWER HERE]\n" * 20))
+    tool.write_file("02_capability.md", "the actual capability, briefly")
+    assert written.read_text() == "the actual capability, briefly"
+
+
+def test_write_file_allows_a_close_revision_within_the_same_session(
+    tool: ScopedFilesystemTool, tmp_path: Path
+):
+    original = "intro paragraph.\n\n" + ("stable content that stays put.\n" * 20)
+    tool.write_file("02_capability.md", original)
+    revised = original.replace("intro paragraph.", "revised intro paragraph.")
+    tool.write_file("02_capability.md", revised)
+    written = tmp_path / "worksheets" / "design-test" / "02_capability.md"
+    assert written.read_text() == revised
+
+
+def test_write_file_blocks_a_near_total_rewrite_within_the_same_session(
+    tool: ScopedFilesystemTool, tmp_path: Path
+):
+    original = "intro paragraph.\n\n" + ("stable content that stays put.\n" * 20)
+    tool.write_file("02_capability.md", original)
+    with pytest.raises(ScopeError):
+        tool.write_file("02_capability.md", "entirely unrelated replacement text " * 20)
+    written = tmp_path / "worksheets" / "design-test" / "02_capability.md"
+    assert written.read_text() == original
+
+
+def test_edit_file_is_not_subject_to_the_overwrite_guard(tool: ScopedFilesystemTool, tmp_path: Path):
+    original = "intro paragraph.\n\n" + ("stable content that stays put.\n" * 20)
+    tool.write_file("02_capability.md", original)
+    tool.edit_file("02_capability.md", "intro paragraph.", "entirely unrelated replacement")
+    written = tmp_path / "worksheets" / "design-test" / "02_capability.md"
+    assert written.read_text().startswith("entirely unrelated replacement")
+
+
 # --- approved_stages guard -------------------------------------------------
 #
 # approved_stages: in RUN.md's frontmatter is meant to be a fact only
