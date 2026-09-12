@@ -14,11 +14,25 @@ class LogIndexError(Exception):
 
 def append_run(repo_root: Path, slug: str, mode: str, subject: str, opened: str) -> None:
     log_path = repo_root / "worksheets" / "_index" / "log.md"
-    text = log_path.read_text(encoding="utf-8")
-    if not text.endswith("\n"):
-        text += "\n"
-    row = f"| {slug} | {mode} | {subject} | {opened} | |\n"
-    log_path.write_text(text + row, encoding="utf-8")
+    lines = log_path.read_text(encoding="utf-8").splitlines()
+    row = f"| {slug} | {mode} | {subject} | {opened} | |"
+    lines.insert(_end_of_run_table(lines), row)
+    log_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _end_of_run_table(lines: list[str]) -> int:
+    """Index of the line just past the run table's last row. log.md carries a
+    second table below it ('Changes to the factory'), so a row appended at
+    end-of-file would land in that one instead."""
+    header = next((i for i, line in enumerate(lines) if line.startswith("| Slug")), None)
+    if header is None:
+        raise LogIndexError(
+            "worksheets/_index/log.md has no run table: no row starting '| Slug'"
+        )
+    index = header + 1
+    while index < len(lines) and lines[index].startswith("|"):
+        index += 1
+    return index
 
 
 def commit_log_index(repo_root: Path, slug: str) -> None:
