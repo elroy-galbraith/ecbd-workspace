@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useRun, useSession, useStageDiff } from "../api/queries";
 import { useApproveStage, useRejectStage, useStartStage } from "../api/mutations";
 import { StageRail } from "../components/StageRail";
@@ -9,6 +9,7 @@ import { ReviewBanner } from "../components/ReviewBanner";
 import { DiffView } from "../components/DiffView";
 import { RejectDialog } from "../components/RejectDialog";
 import { ChatDrawer } from "../components/ChatDrawer";
+import { IconPlus } from "../components/icons";
 import { clearSessionId, loadSessionId } from "../lib/sessionStorage";
 
 export function StagePage() {
@@ -42,16 +43,20 @@ export function StagePage() {
   return (
     <div className="stage-page">
       <header className="stage-page__header">
-        <div className="brand">
+        <Link to="/" className="brand">
           <span className="brand__mark" aria-hidden="true" />
           ECBD
-        </div>
+        </Link>
         <div className="stage-page__divider" aria-hidden="true" />
         <div className="crumb">
           <RunSwitcher currentSlug={slug} />
           <span className="crumb__sep" aria-hidden="true">/</span>
           <span className="crumb__stage mono">stage {stage}</span>
         </div>
+        <Link to="/runs/new" className="btn btn--ghost stage-page__new-run">
+          <IconPlus width={14} height={14} />
+          New run
+        </Link>
       </header>
       <div className="stage-page__body">
         <StageRail

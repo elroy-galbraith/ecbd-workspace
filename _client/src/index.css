@@ -177,6 +177,7 @@ button {
   font: 600 13px/1 var(--font-mono);
   letter-spacing: 0.08em;
   color: var(--fg);
+  text-decoration: none;
 }
 .brand__mark {
   width: 7px;
@@ -201,6 +202,9 @@ button {
   padding: 0 28px;
   border-bottom: 1px solid var(--border-soft);
   background: var(--bg-alt);
+}
+.page__topbar-runs {
+  margin-left: auto;
 }
 .page__body {
   padding: 40px 56px 56px;
@@ -354,6 +358,9 @@ button {
 }
 .crumb__stage {
   color: var(--muted);
+}
+.stage-page__new-run {
+  margin-left: auto;
 }
 .stage-page__body {
   display: flex;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useRuns } from "../api/queries";
 import { useStartRun } from "../api/mutations";
 import { api } from "../api/client";
@@ -45,10 +45,13 @@ export function NewRunPage() {
   return (
     <div className="page">
       <header className="page__topbar">
-        <div className="brand">
+        <Link to="/" className="brand">
           <span className="brand__mark" aria-hidden="true" />
           ECBD
-        </div>
+        </Link>
+        <Link to="/" className="btn btn--ghost page__topbar-runs">
+          Runs
+        </Link>
       </header>
       <div className="new-run-page">
         <div className="new-run-page__intro">

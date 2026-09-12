@@ -42,6 +42,19 @@ beforeEach(() => {
 });
 
 describe("NewRunPage", () => {
+  it("links back to the run list from the brand mark and the Runs button", () => {
+    render(
+      <MemoryRouter initialEntries={["/runs/new"]}>
+        <Routes>
+          <Route path="/runs/new" element={<NewRunPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("link", { name: /ecbd/i })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /^runs$/i })).toHaveAttribute("href", "/");
+  });
+
   it("offers Check for created run only after a session has started, and navigates once a new slug appears", async () => {
     render(
       <MemoryRouter initialEntries={["/runs/new"]}>
