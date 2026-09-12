@@ -246,3 +246,59 @@ def test_list_runs_reads_only_the_run_table(tmp_repo: Path):
     assert api.get("/runs").json() == [
         {"slug": "design-my-eval", "mode": "design", "subject": "A faithfulness eval", "opened": "2026-09-07"}
     ]
+
+
+def test_get_tree_lists_nested_files(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    run_root = tmp_repo / "worksheets" / "design-my-eval"
+    (run_root / "08_build").mkdir(parents=True)
+    (run_root / "01_intended-use.md").write_text("hello", encoding="utf-8")
+    (run_root / "08_build" / "eval.jsonl").write_text("{}", encoding="utf-8")
+
+    response = api.get("/runs/design-my-eval/tree")
+    assert response.status_code == 200
+    assert response.json() == {
+        "tree": [
+            {
+                "name": "08_build",
+                "path": "08_build",
+                "is_dir": True,
+                "children": [
+                    {"name": "eval.jsonl", "path": "08_build/eval.jsonl", "is_dir": False, "children": None},
+                ],
+            },
+            {"name": "01_intended-use.md", "path": "01_intended-use.md", "is_dir": False, "children": None},
+        ]
+    }
+
+
+def test_get_tree_skips_dotfiles_and_sessions_dir(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    run_root = tmp_repo / "worksheets" / "design-my-eval"
+    (run_root / ".sessions").mkdir(parents=True)
+    (run_root / ".sessions" / "01.jsonl").write_text("{}", encoding="utf-8")
+    (run_root / ".hidden").write_text("secret", encoding="utf-8")
+    (run_root / "RUN.md").write_text("# run", encoding="utf-8")
+
+    response = api.get("/runs/design-my-eval/tree")
+    assert response.status_code == 200
+    assert response.json() == {"tree": [{"name": "RUN.md", "path": "RUN.md", "is_dir": False, "children": None}]}
+
+
+def test_get_tree_empty_run(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    (tmp_repo / "worksheets" / "design-my-eval").mkdir(parents=True)
+
+    response = api.get("/runs/design-my-eval/tree")
+    assert response.status_code == 200
+    assert response.json() == {"tree": []}
+
+
+def test_get_tree_404_for_missing_run(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    response = api.get("/runs/design-nonexistent/tree")
+    assert response.status_code == 404

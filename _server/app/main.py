@@ -47,6 +47,21 @@ def _resolve_run_file(run_root: Path, file_path: str) -> Path:
     return target
 
 
+def _build_tree(directory: Path, root: Path) -> list[dict[str, Any]]:
+    nodes: list[dict[str, Any]] = []
+    for child in sorted(directory.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
+        if child.name.startswith("."):  # covers .sessions/ and any other dotfile
+            continue
+        rel_path = child.relative_to(root).as_posix()
+        if child.is_dir():
+            nodes.append(
+                {"name": child.name, "path": rel_path, "is_dir": True, "children": _build_tree(child, root)}
+            )
+        else:
+            nodes.append({"name": child.name, "path": rel_path, "is_dir": False, "children": None})
+    return nodes
+
+
 def _require_valid_stage(stage: str) -> None:
     if stage not in _STAGE_ORDER:
         raise HTTPException(404, f"no such stage '{stage}'")
@@ -269,6 +284,13 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(req.content, encoding="utf-8")
         return {"path": file_path, "content": req.content}
+
+    @app.get("/runs/{slug}/tree")
+    def get_tree(slug: str) -> dict[str, Any]:
+        run_root = repo_root / "worksheets" / slug
+        if not run_root.exists():
+            raise HTTPException(404, f"run '{slug}' does not exist")
+        return {"tree": _build_tree(run_root, run_root)}
 
     return app
 
