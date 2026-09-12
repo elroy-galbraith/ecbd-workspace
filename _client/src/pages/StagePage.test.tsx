@@ -52,6 +52,19 @@ beforeEach(() => {
 });
 
 describe("StagePage", () => {
+  it("links back to the run list from the brand mark and offers a New run link", () => {
+    render(
+      <MemoryRouter initialEntries={["/runs/design-my-eval/stages/02"]}>
+        <Routes>
+          <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("link", { name: /ecbd/i })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /new run/i })).toHaveAttribute("href", "/runs/new");
+  });
+
   it("renders the stage rail and the current stage's document, but no review banner when not ready", () => {
     render(
       <MemoryRouter initialEntries={["/runs/design-my-eval/stages/02"]}>
