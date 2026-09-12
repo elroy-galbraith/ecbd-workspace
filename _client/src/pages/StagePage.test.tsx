@@ -12,6 +12,7 @@ vi.mock("../api/queries", () => ({
   useStageDiff: () => ({ data: undefined }),
   useRuns: () => ({ data: [] }),
   useRunFile: () => ({ data: undefined, isLoading: true, isError: false }),
+  useRunTree: () => ({ data: { tree: [] }, isLoading: false, isError: false }),
 }));
 
 const mockStartStageMutateAsync = vi.fn();
@@ -96,6 +97,19 @@ describe("StagePage", () => {
     );
 
     expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("renders the file tree alongside the stage rail and document", () => {
+    render(
+      <MemoryRouter initialEntries={["/runs/design-my-eval/stages/02"]}>
+        <Routes>
+          <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("navigation", { name: /stage progress/i })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: /run files/i })).toBeInTheDocument();
   });
 
   it("shows an error state when the run fails to load", () => {

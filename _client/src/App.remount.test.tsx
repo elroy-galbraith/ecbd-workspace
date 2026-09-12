@@ -11,6 +11,7 @@ vi.mock("./api/queries", () => ({
   useStageDiff: () => ({ data: undefined }),
   useRuns: () => ({ data: [] }),
   useRunFile: () => ({ data: undefined, isLoading: true, isError: false }),
+  useRunTree: () => ({ data: { tree: [] }, isLoading: false, isError: false }),
 }));
 
 vi.mock("./api/mutations", () => ({
