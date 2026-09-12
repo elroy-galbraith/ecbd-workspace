@@ -6,6 +6,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol, Union
 
+from loguru import logger
+
 
 @dataclass(frozen=True)
 class TextBlock:
@@ -51,6 +53,7 @@ class AnthropicModelClient:
         self._model = model
 
     def create(self, system, messages, tools) -> ModelResponse:
+        logger.debug(f"anthropic request: model={self._model} messages={len(messages)} tools={len(tools)}")
         response = self._client.messages.create(
             model=self._model,
             max_tokens=16000,
@@ -58,6 +61,7 @@ class AnthropicModelClient:
             messages=messages,
             tools=tools,
         )
+        logger.debug(f"anthropic response: stop_reason={response.stop_reason} blocks={len(response.content)}")
         content: list[ContentBlock] = []
         for block in response.content:
             if block.type == "text":
