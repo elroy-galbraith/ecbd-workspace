@@ -42,4 +42,8 @@ A closed loop. If accumulated evidence does not map back to the capabilities nam
 
 ## What this is not
 
-Not a checklist. The questions exist to force reflection and make tacit assumptions explicit; answering all twenty perfunctorily is the documented failure mode the authors warn about. Also not a complete quality assessment — item provenance and consent, privacy, and reliability all matter and sit outside ECBD.
+Not a checklist. The questions exist to force reflection and make tacit assumptions explicit; answering all twenty perfunctorily is the documented failure mode the authors warn about. Also not a complete quality assessment — item provenance and consent, and privacy, all matter and sit outside ECBD. This list is the single home for what is genuinely uncovered, so it shrinks when a house addition takes something on.
+
+**Two things have come off this list, and each only for the line that took it on.** Reliability, handled by `03-measure/` and `_tools/`. Decision cost — what being wrong costs, and where a threshold sits — handled by [decision-cost.md](decision-cost.md) at design stages 1, 6 and 7, and **only there**. An audit still has no place to record that a benchmark's creators never asked what a wrong result costs, so that stays outside ECBD for `02-audit/` and belongs in its findings under this heading.
+
+Both are marked as house additions wherever they appear. Neither is ECBD, and a worksheet should not imply otherwise.

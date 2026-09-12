@@ -8,6 +8,7 @@ The "Loaded by" column reflects what the stage contracts actually list, checked 
 |---|---|---|
 | `worksheet-questions.md` | you need the exact wording of Q1–Q20 | design 1–7, audit 1–5 |
 | `validity-evidence.md` | you are answering or grading a SUPPORT question | design 2–7, audit 3–6, measure 3–4 |
+| `decision-cost.md` | you are recording what a wrong result costs, or grading a cost label — a house addition, not ECBD | design 1 and 7 |
 | `interpreting-item-analysis.md` | an item analysis came back and you need to say what it means | measure 3 |
 | `language.md` | you are writing or editing text held to Simplified Technical English | nothing; read before writing |
 | `ecbd-framework.md` | you need what a module is for, how the pieces connect, and what ECBD does not cover | design 1 and 7, audit 1, 2 and 6 |
@@ -32,5 +33,5 @@ It is the one file here meant for a person mid-sentence rather than an agent mid
 
 They are load-bearing for every future run. Two rules:
 
-- **One home per fact.** The 20 questions live in `worksheet-questions.md` alone; the strength labels in `validity-evidence.md` alone; the nine failure modes in `failure-modes.md` alone; the out-of-scope list in `ecbd-framework.md` alone. Stage contracts and templates cite them and never restate them. Where a template must show a value at the point of use — an enum in a form field — it says which file is the authority.
+- **One home per fact.** The 20 questions live in `worksheet-questions.md` alone; the strength labels in `validity-evidence.md` alone; the cost labels in `decision-cost.md` alone; the nine failure modes in `failure-modes.md` alone; the out-of-scope list in `ecbd-framework.md` alone. Stage contracts and templates cite them and never restate them. Where a template must show a value at the point of use — an enum in a form field — it says which file is the authority.
 - **Changes are not retroactive.** Completed records reflect the rules as they stood. Note a material change here in the run log so a later reader can tell why two records answer the same question differently.
