@@ -103,6 +103,50 @@ describe("StagePage", () => {
     expect(screen.getByRole("status")).toBeInTheDocument();
   });
 
+  it("falls back to RUN.md's durable done tick when there is no live session", () => {
+    // Regression test: this is the state you land in after starting a new
+    // run's stage 01, having the model mark it ready for review, then
+    // losing the session_id<->run link (e.g. navigating away before
+    // "Check for created run") or reloading after the server restarted --
+    // session.data stays undefined, but the stage's own done tick in
+    // RUN.md is durable and must still surface the approve/reject controls.
+    mockUseRun.mockReturnValue({
+      data: {
+        ...runDetail,
+        approved_stages: [],
+        stages: [
+          { file: "01_intended-use.md", stage: "01", questions: "Q1-2", done: true },
+          { file: "02_capability.md", stage: "02", questions: "Q3-5", done: false },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/runs/design-my-eval/stages/01"]}>
+        <Routes>
+          <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("does not re-show the review banner for a stage already approved, even if its done tick is set", () => {
+    render(
+      <MemoryRouter initialEntries={["/runs/design-my-eval/stages/01"]}>
+        <Routes>
+          <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    // runDetail fixture: stage 01 is both done and already in approved_stages.
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("renders the file tree alongside the stage rail and document", () => {
     render(
       <MemoryRouter initialEntries={["/runs/design-my-eval/stages/02"]}>

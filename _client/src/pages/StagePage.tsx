@@ -34,7 +34,18 @@ export function StagePage() {
   if (run.isError || !run.data) return <p role="alert">Could not load run '{slug}'.</p>;
 
   const currentRow = run.data.stages.find((row) => row.stage === stage);
-  const readyForReview = session.data?.ready_for_review ?? false;
+  // "Ready for review" is durably recorded in RUN.md the moment the model
+  // ticks the stage (mark_ready_for_review) -- approving reads that file,
+  // not the chat session (see approval.py). The live session's own flag is
+  // more precise while a session is attached (it correctly drops back to
+  // false the moment a follow-up message reopens the stage for edits), so
+  // prefer it when we have one; otherwise fall back to the RUN.md tick so
+  // the banner still appears after the session_id<->run link is lost (e.g.
+  // navigating away before the new run was found) or the session expires.
+  // Once the stage is actually approved, never show it again either way.
+  const isApproved = run.data.approved_stages.includes(stage);
+  const readyForReview =
+    !isApproved && (session.data ? session.data.ready_for_review : (currentRow?.done ?? false));
   const stageOrder = run.data.stages.map((row) => row.stage);
   // Chat, approve/reject, and diff are design-pipeline-only: the backend's
   // stage contracts and gating are hardcoded to it, and audit/measure runs
