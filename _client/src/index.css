@@ -410,33 +410,36 @@ button {
 
 /* Stage rail */
 .stage-rail {
-  width: 232px;
+  width: 100%;
   flex-shrink: 0;
-  padding: 28px 20px;
-  border-right: 1px solid var(--border-soft);
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border-soft);
   background: var(--bg-alt);
-  overflow-y: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 0;
 }
 .stage-rail__item {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding-top: 1px;
+  align-items: center;
+  gap: 8px;
   text-decoration: none;
   color: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .stage-rail__marker {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
 }
 .stage-rail__dot {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -445,10 +448,10 @@ button {
   color: var(--accent-ink);
 }
 .stage-rail__connector {
-  width: 2px;
-  flex: 1;
-  min-height: 18px;
-  margin: 2px 0;
+  height: 2px;
+  width: 28px;
+  flex-shrink: 0;
+  margin: 0 8px;
   background: var(--border-soft);
 }
 .stage-rail__item--approved .stage-rail__dot {
@@ -493,6 +496,80 @@ button {
   border: 1.5px dashed var(--border);
   background: transparent;
   color: var(--faint);
+}
+
+/* File tree */
+.file-tree {
+  width: 240px;
+  flex-shrink: 0;
+  padding: 16px 12px;
+  border-right: 1px solid var(--border-soft);
+  background: var(--bg-alt);
+  overflow-y: auto;
+  font-size: 13px;
+}
+.file-tree--collapsed {
+  width: auto;
+  padding: 16px 8px;
+}
+.file-tree__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: 500 12.5px/1 var(--font-sans);
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 8px;
+  white-space: nowrap;
+}
+.file-tree__toggle:hover {
+  color: var(--fg);
+}
+.file-tree__dir > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--muted);
+  list-style: none;
+}
+.file-tree__dir > summary::-webkit-details-marker {
+  display: none;
+}
+.file-tree__dir > summary:hover {
+  color: var(--fg);
+}
+.file-tree__children {
+  margin-left: 14px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-soft);
+}
+.file-tree__file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--fg);
+  font: 400 13px/1.3 var(--font-mono);
+}
+.file-tree__file:hover {
+  background: var(--surface-2);
+}
+.file-tree__file--active {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.file-tree__file--locked,
+.file-tree__file--inert {
+  color: var(--faint);
+  cursor: default;
 }
 
 /* Document pane */
@@ -825,6 +902,22 @@ button {
 }
 .chat-drawer--empty textarea:focus {
   border-color: var(--accent);
+}
+
+.chat-drawer--panel {
+  border-top: none;
+  border-left: 1px solid var(--border-soft);
+  max-height: none;
+  height: 100%;
+  width: 320px;
+  flex-shrink: 0;
+}
+.chat-drawer--panel.chat-drawer--collapsed {
+  width: auto;
+  overflow: hidden;
+}
+.chat-drawer--panel.chat-drawer--collapsed .chat-drawer__toggle {
+  margin: 12px;
 }
 
 .chat-drawer__toggle {

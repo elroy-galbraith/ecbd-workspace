@@ -31,6 +31,17 @@ export interface RunDetail {
   loop_backs: LoopBack[];
 }
 
+export interface RunTreeNode {
+  name: string;
+  path: string;
+  is_dir: boolean;
+  children: RunTreeNode[] | null;
+}
+
+export interface RunTree {
+  tree: RunTreeNode[];
+}
+
 export type TranscriptBlock =
   | { type: "text"; text: string }
   | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }

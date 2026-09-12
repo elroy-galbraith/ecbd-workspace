@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSendMessage } from "../api/mutations";
 import { useSession } from "../api/queries";
 import { ApiError } from "../api/client";
-import { clearSessionId, loadSessionId, storeSessionId } from "../lib/sessionStorage";
+import { clearSessionId, loadPanelCollapsed, loadSessionId, storePanelCollapsed, storeSessionId } from "../lib/sessionStorage";
 import { TranscriptView } from "./TranscriptView";
 import { IconChat, IconSend } from "./icons";
 
@@ -11,11 +11,12 @@ interface ChatDrawerProps {
   stage: string;
   startSession: (brief: string) => Promise<{ session_id: string }>;
   onSessionId?: (sessionId: string) => void;
+  variant?: "drawer" | "panel";
 }
 
-export function ChatDrawer({ runKey, stage, startSession, onSessionId }: ChatDrawerProps) {
+export function ChatDrawer({ runKey, stage, startSession, onSessionId, variant = "drawer" }: ChatDrawerProps) {
   const [sessionId, setSessionId] = useState<string | null>(() => loadSessionId(runKey, stage));
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(() => loadPanelCollapsed(runKey, "chat") ?? true);
   const [draft, setDraft] = useState("");
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -34,6 +35,7 @@ export function ChatDrawer({ runKey, stage, startSession, onSessionId }: ChatDra
       setSessionId(session_id);
       setDraft("");
       setCollapsed(false);
+      storePanelCollapsed(runKey, "chat", false);
       onSessionId?.(session_id);
     } catch (err) {
       setStartError(err instanceof Error ? err.message : "failed to start session");
@@ -53,9 +55,17 @@ export function ChatDrawer({ runKey, stage, startSession, onSessionId }: ChatDra
     setSessionId(null);
   }
 
+  function toggleCollapsed() {
+    setCollapsed((current) => {
+      const next = !current;
+      storePanelCollapsed(runKey, "chat", next);
+      return next;
+    });
+  }
+
   if (sessionId === null || sessionGone) {
     return (
-      <div className="chat-drawer chat-drawer--empty">
+      <div className={`chat-drawer chat-drawer--${variant} chat-drawer--empty`}>
         {sessionGone && <p role="alert">Previous session is no longer available — start a new one.</p>}
         <textarea
           value={draft}
@@ -71,8 +81,8 @@ export function ChatDrawer({ runKey, stage, startSession, onSessionId }: ChatDra
   }
 
   return (
-    <div className={`chat-drawer${collapsed ? " chat-drawer--collapsed" : ""}`}>
-      <button className="chat-drawer__toggle" onClick={() => setCollapsed((c) => !c)}>
+    <div className={`chat-drawer chat-drawer--${variant}${collapsed ? " chat-drawer--collapsed" : ""}`}>
+      <button className="chat-drawer__toggle" onClick={toggleCollapsed}>
         <IconChat width={15} height={15} />
         {collapsed ? "Expand chat" : "Collapse chat"}
       </button>

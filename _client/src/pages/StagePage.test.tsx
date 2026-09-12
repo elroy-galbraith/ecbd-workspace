@@ -12,6 +12,11 @@ vi.mock("../api/queries", () => ({
   useStageDiff: () => ({ data: undefined }),
   useRuns: () => ({ data: [] }),
   useRunFile: () => ({ data: undefined, isLoading: true, isError: false }),
+  useRunTree: () => ({
+    data: { tree: [{ name: "01_intended-use.md", path: "01_intended-use.md", is_dir: false, children: null }] },
+    isLoading: false,
+    isError: false,
+  }),
 }));
 
 const mockStartStageMutateAsync = vi.fn();
@@ -29,6 +34,8 @@ vi.mock("../lib/sessionStorage", () => ({
   loadSessionId: () => null,
   storeSessionId: vi.fn(),
   clearSessionId: vi.fn(),
+  loadPanelCollapsed: vi.fn().mockReturnValue(null),
+  storePanelCollapsed: vi.fn(),
 }));
 
 const runDetail = {
@@ -140,6 +147,35 @@ describe("StagePage", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
+  it("renders the file tree alongside the stage rail and document", () => {
+    render(
+      <MemoryRouter initialEntries={["/runs/design-my-eval/stages/02"]}>
+        <Routes>
+          <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("navigation", { name: /stage progress/i })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: /run files/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /01_intended-use\.md/ })).toHaveAttribute(
+      "href",
+      "/runs/design-my-eval/stages/01",
+    );
+  });
+
+  it("renders the chat panel with the panel variant class for a design run", () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={["/runs/design-my-eval/stages/02"]}>
+        <Routes>
+          <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(container.querySelector(".chat-drawer--panel")).toBeInTheDocument();
+  });
+
   it("shows an error state when the run fails to load", () => {
     mockUseRun.mockReturnValue({ data: undefined, isLoading: false, isError: true });
     render(
@@ -198,7 +234,7 @@ describe("StagePage", () => {
       isError: false,
     });
 
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={["/runs/audit-my-eval/stages/01"]}>
         <Routes>
           <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
@@ -210,6 +246,7 @@ describe("StagePage", () => {
     // hardcoded to the design pipeline's stage contracts.
     expect(screen.queryByRole("button", { name: /expand chat/i })).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/say what you need/i)).not.toBeInTheDocument();
+    expect(container.querySelector(".chat-drawer--panel")).not.toBeInTheDocument();
 
     // Stage 02 isn't done and has no approved_stages to gate on, but an
     // audit run has no gate at all -- it must still be a live link, not a

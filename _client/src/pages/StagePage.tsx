@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useRun, useSession, useStageDiff } from "../api/queries";
 import { useApproveStage, useRejectStage, useStartStage } from "../api/mutations";
 import { StageRail } from "../components/StageRail";
+import { FileTree } from "../components/FileTree";
 import { RunSwitcher } from "../components/RunSwitcher";
 import { DocumentPane } from "../components/DocumentPane";
 import { ReviewBanner } from "../components/ReviewBanner";
@@ -69,8 +70,15 @@ export function StagePage() {
           New run
         </Link>
       </header>
+      <StageRail
+        slug={slug}
+        stages={run.data.stages}
+        approvedStages={run.data.approved_stages}
+        activeStage={stage}
+        gated={isDesign}
+      />
       <div className="stage-page__body">
-        <StageRail
+        <FileTree
           slug={slug}
           stages={run.data.stages}
           approvedStages={run.data.approved_stages}
@@ -110,15 +118,16 @@ export function StagePage() {
             />
           )}
         </main>
+        {isDesign && (
+          <ChatDrawer
+            variant="panel"
+            runKey={slug}
+            stage={stage}
+            startSession={(brief) => startStage.mutateAsync(brief)}
+            onSessionId={setSessionId}
+          />
+        )}
       </div>
-      {isDesign && (
-        <ChatDrawer
-          runKey={slug}
-          stage={stage}
-          startSession={(brief) => startStage.mutateAsync(brief)}
-          onSessionId={setSessionId}
-        />
-      )}
     </div>
   );
 }

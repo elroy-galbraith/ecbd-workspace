@@ -11,6 +11,7 @@ vi.mock("./api/queries", () => ({
   useStageDiff: () => ({ data: undefined }),
   useRuns: () => ({ data: [] }),
   useRunFile: () => ({ data: undefined, isLoading: true, isError: false }),
+  useRunTree: () => ({ data: { tree: [] }, isLoading: false, isError: false }),
 }));
 
 vi.mock("./api/mutations", () => ({
@@ -26,6 +27,8 @@ vi.mock("./lib/sessionStorage", () => ({
   loadSessionId: (...args: unknown[]) => mockLoadSessionId(...args),
   storeSessionId: vi.fn(),
   clearSessionId: vi.fn(),
+  loadPanelCollapsed: vi.fn().mockReturnValue(null),
+  storePanelCollapsed: vi.fn(),
 }));
 
 const runDetail = {

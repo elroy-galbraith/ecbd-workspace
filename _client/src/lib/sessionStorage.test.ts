@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { clearSessionId, loadSessionId, storeSessionId } from "./sessionStorage";
+import { clearSessionId, loadPanelCollapsed, loadSessionId, storePanelCollapsed, storeSessionId } from "./sessionStorage";
 
 describe("sessionStorage helpers", () => {
   beforeEach(() => {
@@ -33,6 +33,40 @@ describe("sessionStorage helpers", () => {
       throw new Error("blocked");
     });
     expect(() => storeSessionId("design-my-eval", "01", "x")).not.toThrow();
+    spy.mockRestore();
+  });
+});
+
+describe("panel collapse helpers", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("returns null when nothing is stored", () => {
+    expect(loadPanelCollapsed("design-my-eval", "chat")).toBeNull();
+  });
+
+  it("round-trips a stored collapse flag", () => {
+    storePanelCollapsed("design-my-eval", "chat", true);
+    expect(loadPanelCollapsed("design-my-eval", "chat")).toBe(true);
+
+    storePanelCollapsed("design-my-eval", "chat", false);
+    expect(loadPanelCollapsed("design-my-eval", "chat")).toBe(false);
+  });
+
+  it("keeps file-tree and chat collapse state independent", () => {
+    storePanelCollapsed("design-my-eval", "file-tree", true);
+    storePanelCollapsed("design-my-eval", "chat", false);
+
+    expect(loadPanelCollapsed("design-my-eval", "file-tree")).toBe(true);
+    expect(loadPanelCollapsed("design-my-eval", "chat")).toBe(false);
+  });
+
+  it("does not throw when localStorage access fails", () => {
+    const spy = vi.spyOn(window.localStorage.__proto__, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    expect(() => storePanelCollapsed("design-my-eval", "chat", true)).not.toThrow();
     spy.mockRestore();
   });
 });

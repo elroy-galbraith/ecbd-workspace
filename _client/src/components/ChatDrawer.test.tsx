@@ -7,10 +7,14 @@ import { ApiError } from "../api/client";
 const mockLoadSessionId = vi.fn();
 const mockStoreSessionId = vi.fn();
 const mockClearSessionId = vi.fn();
+const mockLoadPanelCollapsed = vi.fn();
+const mockStorePanelCollapsed = vi.fn();
 vi.mock("../lib/sessionStorage", () => ({
   loadSessionId: (...args: unknown[]) => mockLoadSessionId(...args),
   storeSessionId: (...args: unknown[]) => mockStoreSessionId(...args),
   clearSessionId: (...args: unknown[]) => mockClearSessionId(...args),
+  loadPanelCollapsed: (...args: unknown[]) => mockLoadPanelCollapsed(...args),
+  storePanelCollapsed: (...args: unknown[]) => mockStorePanelCollapsed(...args),
 }));
 
 const mockUseSession = vi.fn();
@@ -26,6 +30,7 @@ vi.mock("../api/mutations", () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mockUseSession.mockReturnValue({ data: undefined, isError: false, error: null });
+  mockLoadPanelCollapsed.mockReturnValue(null);
 });
 
 describe("ChatDrawer", () => {
@@ -60,5 +65,47 @@ describe("ChatDrawer", () => {
 
     render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} />);
     expect(screen.getByRole("alert")).toHaveTextContent(/no longer available/i);
+  });
+
+  it("defaults to collapsed when nothing is stored (matching today's behavior), and persists an expand", async () => {
+    mockLoadSessionId.mockReturnValue("sess-1");
+    mockUseSession.mockReturnValue({
+      data: { transcript: [], ready_for_review: false },
+      isError: false,
+      error: null,
+    });
+
+    render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} variant="panel" />);
+
+    expect(screen.getByRole("button", { name: /expand chat/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /expand chat/i }));
+    expect(mockStorePanelCollapsed).toHaveBeenCalledWith("design-my-eval", "chat", false);
+  });
+
+  it("restores a previously-expanded panel from storage", () => {
+    mockLoadSessionId.mockReturnValue("sess-1");
+    mockLoadPanelCollapsed.mockReturnValue(false);
+    mockUseSession.mockReturnValue({
+      data: { transcript: [], ready_for_review: false },
+      isError: false,
+      error: null,
+    });
+
+    render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} variant="panel" />);
+
+    expect(screen.getByRole("button", { name: /collapse chat/i })).toBeInTheDocument();
+  });
+
+  it("applies the panel variant class when requested, and the drawer variant by default", () => {
+    mockLoadSessionId.mockReturnValue(null);
+    const { container: panelContainer } = render(
+      <ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} variant="panel" />,
+    );
+    expect(panelContainer.querySelector(".chat-drawer--panel")).toBeInTheDocument();
+
+    const { container: drawerContainer } = render(
+      <ChatDrawer runKey="new" stage="01" startSession={vi.fn()} />,
+    );
+    expect(drawerContainer.querySelector(".chat-drawer--drawer")).toBeInTheDocument();
   });
 });

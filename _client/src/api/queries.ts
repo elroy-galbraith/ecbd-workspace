@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./client";
-import type { DiffResponse, FileContent, RunDetail, RunSummary, SessionState } from "./types";
+import type { DiffResponse, FileContent, RunDetail, RunSummary, RunTree, SessionState } from "./types";
 
 export function useRuns() {
   return useQuery({ queryKey: ["runs"], queryFn: () => api.get<RunSummary[]>("/runs") });
@@ -28,6 +28,14 @@ export function useRunFile(slug: string | undefined, path: string | undefined) {
     queryKey: ["file", slug, path],
     queryFn: () => api.get<FileContent>(`/runs/${slug}/files/${path}`),
     enabled: slug !== undefined && path !== undefined,
+  });
+}
+
+export function useRunTree(slug: string | undefined) {
+  return useQuery({
+    queryKey: ["tree", slug],
+    queryFn: () => api.get<RunTree>(`/runs/${slug}/tree`),
+    enabled: slug !== undefined,
   });
 }
 
