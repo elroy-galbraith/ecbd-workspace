@@ -33,6 +33,7 @@ vi.mock("../lib/sessionStorage", () => ({
 
 const runDetail = {
   slug: "design-my-eval",
+  mode: "design",
   status: "in-progress",
   opened: "2026-09-09",
   closed: null,
@@ -123,5 +124,39 @@ describe("StagePage", () => {
     // Once ChatDrawer's onSessionId fires, StagePage's own sessionId state
     // must update, which re-invokes useSession with a defined session id.
     expect(mockUseSession.mock.calls.some(([arg]) => arg === "new-session-id")).toBe(true);
+  });
+
+  it("hides chat, approve/reject, and stage locking for a non-design run", () => {
+    mockUseRun.mockReturnValue({
+      data: {
+        ...runDetail,
+        mode: "audit",
+        approved_stages: [],
+        stages: [
+          { file: "01_sources.md", stage: "01", questions: "Framing", done: true },
+          { file: "02_intended-use.md", stage: "02", questions: "Q1-2", done: false },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/runs/audit-my-eval/stages/01"]}>
+        <Routes>
+          <Route path="/runs/:slug/stages/:stage" element={<StagePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    // No chat drawer: the backend's session/approve/reject endpoints are
+    // hardcoded to the design pipeline's stage contracts.
+    expect(screen.queryByRole("button", { name: /expand chat/i })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/say what you need/i)).not.toBeInTheDocument();
+
+    // Stage 02 isn't done and has no approved_stages to gate on, but an
+    // audit run has no gate at all -- it must still be a live link, not a
+    // locked, non-interactive item.
+    expect(screen.getByRole("link", { name: /02/ })).toBeInTheDocument();
   });
 });

@@ -7,6 +7,10 @@ interface StageRailProps {
   stages: StageTableRow[];
   approvedStages: string[];
   activeStage: string;
+  /** The design pipeline gates each stage behind the last one's approval.
+   * Audit and measure runs have no such gate -- every stage is viewable,
+   * and "approved" is just each stage's own Done tick. Defaults to true. */
+  gated?: boolean;
 }
 
 export function isStageUnlocked(stages: StageTableRow[], approvedStages: string[], stage: string): boolean {
@@ -23,12 +27,12 @@ export function stageName(file: string): string {
 
 type StageState = "approved" | "active" | "upcoming" | "locked";
 
-export function StageRail({ slug, stages, approvedStages, activeStage }: StageRailProps) {
+export function StageRail({ slug, stages, approvedStages, activeStage, gated = true }: StageRailProps) {
   return (
     <nav aria-label="Stage progress" className="stage-rail">
       {stages.map((row, index) => {
-        const unlocked = isStageUnlocked(stages, approvedStages, row.stage);
-        const approved = approvedStages.includes(row.stage);
+        const unlocked = gated ? isStageUnlocked(stages, approvedStages, row.stage) : true;
+        const approved = row.done;
         const isActive = row.stage === activeStage;
         const label = `${row.stage} ${stageName(row.file)}`;
         const state: StageState = approved ? "approved" : isActive ? "active" : unlocked ? "upcoming" : "locked";

@@ -41,4 +41,15 @@ describe("StageRail", () => {
     expect(stage03).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByRole("link", { name: /03/ })).not.toBeInTheDocument();
   });
+
+  it("ungated (audit/measure) runs render every stage as a link, done or not", () => {
+    render(
+      <MemoryRouter>
+        <StageRail slug="audit-my-eval" stages={stages} approvedStages={[]} activeStage="01" gated={false} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("link", { name: /02/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /03/ })).toBeInTheDocument();
+  });
 });

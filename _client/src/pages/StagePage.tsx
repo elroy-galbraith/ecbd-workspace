@@ -34,6 +34,10 @@ export function StagePage() {
   const currentRow = run.data.stages.find((row) => row.stage === stage);
   const readyForReview = session.data?.ready_for_review ?? false;
   const stageOrder = run.data.stages.map((row) => row.stage);
+  // Chat, approve/reject, and diff are design-pipeline-only: the backend's
+  // stage contracts and gating are hardcoded to it, and audit/measure runs
+  // never carry approved_stages to gate against in the first place.
+  const isDesign = run.data.mode === "design";
 
   return (
     <div className="stage-page">
@@ -50,9 +54,15 @@ export function StagePage() {
         </div>
       </header>
       <div className="stage-page__body">
-        <StageRail slug={slug} stages={run.data.stages} approvedStages={run.data.approved_stages} activeStage={stage} />
+        <StageRail
+          slug={slug}
+          stages={run.data.stages}
+          approvedStages={run.data.approved_stages}
+          activeStage={stage}
+          gated={isDesign}
+        />
         <main className="stage-page__document">
-          {readyForReview && (
+          {isDesign && readyForReview && (
             <ReviewBanner
               onViewDiff={() => setShowDiff(true)}
               onApprove={() => approve.mutate()}
@@ -60,9 +70,9 @@ export function StagePage() {
               approving={approve.isPending}
             />
           )}
-          {showDiff && diff.data && <DiffView diff={diff.data.diff} />}
+          {isDesign && showDiff && diff.data && <DiffView diff={diff.data.diff} />}
           {currentRow && <DocumentPane slug={slug} file={currentRow.file} />}
-          {showReject && (
+          {isDesign && showReject && (
             <RejectDialog
               approvedStages={run.data.approved_stages}
               currentStage={stage}
@@ -85,12 +95,14 @@ export function StagePage() {
           )}
         </main>
       </div>
-      <ChatDrawer
-        runKey={slug}
-        stage={stage}
-        startSession={(brief) => startStage.mutateAsync(brief)}
-        onSessionId={setSessionId}
-      />
+      {isDesign && (
+        <ChatDrawer
+          runKey={slug}
+          stage={stage}
+          startSession={(brief) => startStage.mutateAsync(brief)}
+          onSessionId={setSessionId}
+        />
+      )}
     </div>
   );
 }
