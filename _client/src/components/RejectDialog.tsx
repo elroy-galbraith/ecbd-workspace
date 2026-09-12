@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { IconAlertTriangle } from "./icons";
 
 interface RejectDialogProps {
   approvedStages: string[];
@@ -13,28 +14,39 @@ export function RejectDialog({ approvedStages, currentStage, onSubmit, onCancel 
   const [reason, setReason] = useState("");
 
   return (
-    <div role="dialog" aria-label="Reject stage">
-      <label>
-        Send back to
-        <select value={targetStage} onChange={(event) => setTargetStage(event.target.value)}>
-          {candidates.map((stage) => (
-            <option key={stage} value={stage}>
-              {stage}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Reason
-        <textarea value={reason} onChange={(event) => setReason(event.target.value)} />
-      </label>
-      <button
-        onClick={() => onSubmit({ target_stage: targetStage, reason })}
-        disabled={!targetStage || !reason.trim()}
-      >
-        Reject
-      </button>
-      <button onClick={onCancel}>Cancel</button>
+    <div className="reject-overlay">
+      <div role="dialog" aria-label="Reject stage" className="reject-dialog">
+        <h2 className="reject-dialog__title">
+          <IconAlertTriangle width={18} height={18} />
+          Reject stage
+        </h2>
+        <label className="reject-dialog__field">
+          Send back to
+          <select value={targetStage} onChange={(event) => setTargetStage(event.target.value)}>
+            {candidates.map((stage) => (
+              <option key={stage} value={stage}>
+                {stage}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="reject-dialog__field">
+          Reason
+          <textarea value={reason} onChange={(event) => setReason(event.target.value)} />
+        </label>
+        <div className="reject-dialog__actions">
+          <button className="btn btn--ghost" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            className="btn btn--danger"
+            onClick={() => onSubmit({ target_stage: targetStage, reason })}
+            disabled={!targetStage || !reason.trim()}
+          >
+            Reject
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
