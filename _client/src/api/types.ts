@@ -22,6 +22,7 @@ export interface LoopBack {
 
 export interface RunDetail {
   slug: string;
+  mode: string;
   status: string | null;
   opened: string | null;
   closed: string | null;

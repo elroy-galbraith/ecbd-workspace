@@ -126,6 +126,7 @@ def parse_run_md(text: str) -> dict:
     except RunMdError:
         approved_stages = []
     return {
+        "mode": frontmatter.get("mode"),
         "status": frontmatter.get("status"),
         "opened": frontmatter.get("opened"),
         "closed": frontmatter.get("closed"),

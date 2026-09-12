@@ -25,6 +25,7 @@ SAMPLE = """# A run
 
 FRONTMATTER_SAMPLE = """---
 slug: design-my-eval
+mode: design
 status: intake          # lifecycle values and their meaning: worksheets/CONTEXT.md
 objects_of_evaluation: []
 capabilities: []
@@ -217,6 +218,7 @@ def test_parse_run_md_defaults_approved_stages_when_line_is_absent():
 
 def test_parse_run_md_combines_frontmatter_table_and_loopbacks():
     result = parse_run_md(FRONTMATTER_SAMPLE)
+    assert result["mode"] == "design"
     assert result["status"] == "intake"
     assert result["approved_stages"] == []
     assert result["stages"][0] == {

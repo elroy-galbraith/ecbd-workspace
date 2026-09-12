@@ -30,6 +30,7 @@ vi.mock("./lib/sessionStorage", () => ({
 
 const runDetail = {
   slug: "design-my-eval",
+  mode: "design",
   status: "in-progress",
   opened: "2026-09-09",
   closed: null,
