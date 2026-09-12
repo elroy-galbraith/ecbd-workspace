@@ -23,6 +23,7 @@ export function useSendMessage(sessionId: string, slug?: string) {
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
       if (slug) {
         queryClient.invalidateQueries({ queryKey: ["file", slug] });
+        queryClient.invalidateQueries({ queryKey: ["tree", slug] });
       }
     },
   });

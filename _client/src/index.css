@@ -413,7 +413,6 @@ button {
   width: 100%;
   flex-shrink: 0;
   padding: 14px 24px;
-  border-right: none;
   border-bottom: 1px solid var(--border-soft);
   background: var(--bg-alt);
   overflow-x: auto;
@@ -451,8 +450,7 @@ button {
 .stage-rail__connector {
   height: 2px;
   width: 28px;
-  min-width: 18px;
-  flex: 0 1 auto;
+  flex-shrink: 0;
   margin: 0 8px;
   background: var(--border-soft);
 }

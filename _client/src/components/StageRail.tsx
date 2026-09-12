@@ -43,7 +43,6 @@ export function StageRail({ slug, stages, approvedStages, activeStage, gated = t
             <span className="stage-rail__dot">
               {approved ? <IconCheck width={11} height={11} /> : state === "locked" ? <IconLock width={11} height={11} /> : null}
             </span>
-            {!isLast && <span className="stage-rail__connector" />}
           </span>
         );
 
@@ -57,6 +56,7 @@ export function StageRail({ slug, stages, approvedStages, activeStage, gated = t
             >
               {marker}
               {label}
+              {!isLast && <span className="stage-rail__connector" />}
             </span>
           );
         }
@@ -69,6 +69,7 @@ export function StageRail({ slug, stages, approvedStages, activeStage, gated = t
           >
             {marker}
             {label}
+            {!isLast && <span className="stage-rail__connector" />}
           </Link>
         );
       })}
