@@ -10,6 +10,9 @@ inputs:
   - path: _shared/worksheet-questions.md
     relative_to: repo
     access: read
+  - path: _shared/decision-cost.md
+    relative_to: repo
+    access: read
   - path: worksheets/_index/log.md
     relative_to: repo
     access: read
@@ -31,6 +34,7 @@ One job: state the intended use precisely enough that every later decision can b
 - Working (this run): the request as given — a brief, a conversation, a ticket
 - Reference (every run): ../../_shared/ecbd-framework.md
 - Reference (every run): ../../_shared/worksheet-questions.md (Framing, Q1–Q2)
+- Reference (every run): ../../_shared/decision-cost.md — a house addition; ECBD does not ask these
 - Reference (every run): ../../worksheets/_index/log.md — for its column shape
 - Reference (every run): ../../_templates/design-run/ — the run folder you are about to copy
 - Reference (if it exists): ../../_shared/house-context.md
@@ -44,11 +48,17 @@ Do NOT load: other stages' references, prior runs, the source PDF.
 4. Answer the framing questions and Q1–Q2 into `01_intended-use.md`.
 5. Name the objects of evaluation concretely — which systems, which versions, under what conditions. "LLMs" is not an answer. Copy the list into `RUN.md` frontmatter `objects_of_evaluation:`; stage 4 answers Q10 against it.
 6. State the decision the results will inform, and who makes it. If no one acts differently based on the outcome, say so plainly here rather than discovering it at stage 7.
-7. Record what would make this eval a waste of effort. That line constrains scope more than any other.
-8. Tick this stage's row in `RUN.md` and set `status: in-progress` if it is still `intake`. The tick means the output is written and ready for the human check below, not that it passed.
+7. Name the cost of failure in **both** directions — what a false pass costs and who carries it, what a false block costs and who carries it. Two answers. One answer means you have written down the harm that reaches the person in the room.
+8. Record the cost asymmetry as a ratio with a direction, and label it from `decision-cost.md`. `absent` is an answer; one to one written in place of an answer is not. Then name the binding constraint — money or human time, whichever is actually scarce. Stage 5 will check this, and stage 6 sets the threshold against it.
+9. Record what would make this eval a waste of effort. That line constrains scope more than any other.
+10. Tick this stage's row in `RUN.md` and set `status: in-progress` if it is still `intake`. The tick means the output is written and ready for the human check below, not that it passed.
 
 ## Outputs
 - `01_intended-use.md` → the run folder
 
 ## Human check
-Ask the person who requested the eval one question: "if this result is good, what will you do differently?" A vague answer means the intended use is not settled. Stage 2 will then inherit that vagueness. Edit this file directly. The next stage reads whatever you leave here.
+Ask the person who requested the eval one question: "if this result is good, what will you do differently?" A vague answer means the intended use is not settled. Stage 2 will then inherit that vagueness.
+
+Then ask the person who makes the decision a second question: "which error would you rather make?" If that person cannot answer, the cost asymmetry is `absent`. Do not write one to one in its place.
+
+Edit this file directly. The next stage reads whatever you leave here.

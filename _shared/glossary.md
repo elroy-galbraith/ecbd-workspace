@@ -24,6 +24,9 @@ ECBD terminology, from Table 1 of [source/ECBD.pdf](source/ECBD.pdf). Use these 
 | **Design run** | A run through `01-design/` that creates a new eval: worksheet plus runnable artefacts. |
 | **Audit run** | A run through `02-audit/` that analyses an existing benchmark against the same 20 questions. |
 | **Validity register** | The per-run ledger of every SUPPORT answer, its strength, and every acknowledged gap. The honest summary of what the instrument has not earned. |
+| **Cost of failure** | What a wrong result costs, in both directions, and who carries each. A false pass and a false block land on different people. Two answers, never one. See [decision-cost.md](decision-cost.md). |
+| **Cost asymmetry** | The ratio between those two costs, with a direction. Carries a label — `elicited`, `derived`, `assumed` or `absent` — on the same discipline as a strength label. |
+| **Operating point** | The score at which someone acts, the loss ratio that justifies it, and the switching condition that would move it. All three, or it is a number someone typed. |
 
 ## Terminology drift to avoid
 

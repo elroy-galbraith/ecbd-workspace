@@ -41,6 +41,22 @@ Names and definitions are in `_shared/failure-modes.md` — the authority. This 
 | 9 | Validity evidence absent entirely | | |
 
 
+## Decision cost
+
+A house addition, not ECBD. Labels and what each obliges are in `_shared/decision-cost.md` — the authority. This table is a form to fill in, not a second definition.
+
+| | From | Answer |
+|---|---|---|
+| Cost of a false pass, and who carries it | stage 1 | |
+| Cost of a false block, and who carries it | stage 1 | |
+| Cost asymmetry — ratio and direction | stage 1 | |
+| Label — `elicited` / `derived` / `assumed` / `absent` | stage 1 | |
+| Operating point — the score at which someone acts | stage 6 | |
+| Loss ratio behind that score | stage 6 | |
+| Switching condition — what moves the line or retires the eval | stage 6 | |
+
+A label of `absent` or `assumed`, or an operating point with no ratio behind it, is a gap. Carry it into the table below.
+
 ## Gaps and what would close them
 
 | Gap | Experiment that would close it | Rough cost |
