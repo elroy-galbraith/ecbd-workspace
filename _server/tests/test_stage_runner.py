@@ -176,7 +176,7 @@ def test_new_send_call_resets_the_freeze_and_allows_further_writes(tmp_repo: Pat
         ModelResponse(content=[ToolUseBlock(id="c2", name="write_file", input={"path": "01_intended-use.md", "content": "first draft"})], stop_reason="tool_use"),
         ModelResponse(content=[ToolUseBlock(id="c3", name="mark_ready_for_review", input={})], stop_reason="tool_use"),
         ModelResponse(content=[TextBlock(text="ready for review")], stop_reason="end_turn"),
-        ModelResponse(content=[ToolUseBlock(id="c4", name="write_file", input={"path": "01_intended-use.md", "content": "revised after feedback"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c4", name="edit_file", input={"path": "01_intended-use.md", "old": "first draft", "new": "revised draft"})], stop_reason="tool_use"),
         ModelResponse(content=[TextBlock(text="updated")], stop_reason="end_turn"),
     ])
     scope = _stage_01_scope(tmp_repo)
@@ -197,7 +197,49 @@ def test_new_send_call_resets_the_freeze_and_allows_further_writes(tmp_repo: Pat
     assert reply == "updated"
     assert runner.ready_for_review is False
     run_root = tmp_repo / "worksheets" / "design-my-eval"
-    assert (run_root / "01_intended-use.md").read_text() == "revised after feedback"
+    assert (run_root / "01_intended-use.md").read_text() == "revised draft"
+
+
+def test_write_file_after_freeze_reset_is_still_guarded_against_a_full_rewrite(tmp_repo: Path, tmp_path: Path):
+    # The write-freeze from mark_ready_for_review lifts on a new human
+    # message, but that must not also lift the overwrite guard: a full
+    # regeneration of a file this session already drafted is still the
+    # wrong tool, review feedback or not. The model is expected to recover
+    # by switching to edit_file, same as any other tool error.
+    client = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "subj"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c2", name="write_file", input={"path": "01_intended-use.md", "content": "first draft, a fair bit of settled prose"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c3", name="mark_ready_for_review", input={})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="ready for review")], stop_reason="end_turn"),
+        ModelResponse(content=[ToolUseBlock(id="c4", name="write_file", input={"path": "01_intended-use.md", "content": "an entirely different rewritten document"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c5", name="edit_file", input={"path": "01_intended-use.md", "old": "first draft", "new": "revised draft"})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="updated with a targeted edit instead")], stop_reason="end_turn"),
+    ])
+    scope = _stage_01_scope(tmp_repo)
+    runner = StageRunner(
+        scope=scope,
+        model_client=client,
+        transcript=TranscriptStore(tmp_path / "session.jsonl"),
+        repo_root=tmp_repo,
+        pipeline="design",
+        stage_number="01",
+    )
+
+    runner.send("go")
+    reply = runner.send("please revise the wording")
+
+    assert reply == "updated with a targeted edit instead"
+    run_root = tmp_repo / "worksheets" / "design-my-eval"
+    assert (run_root / "01_intended-use.md").read_text() == "revised draft, a fair bit of settled prose"
+
+    turns = TranscriptStore(tmp_path / "session.jsonl").read_all()
+    c4_result = next(
+        block
+        for turn in turns
+        for block in turn["content"]
+        if isinstance(block, dict) and block.get("tool_use_id") == "c4"
+    )
+    assert c4_result["is_error"] is True
 
 
 def test_unanticipated_exception_in_dispatch_is_reported_not_raised(tmp_repo: Path, tmp_path: Path):
