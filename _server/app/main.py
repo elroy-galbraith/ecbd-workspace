@@ -7,6 +7,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 from pydantic import BaseModel
 
 from .approval import ApprovalError, approve_stage, reject_stage
@@ -116,6 +117,7 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         try:
             scope = load_stage_scope(stage_contract_path(stage), repo_root=repo_root, run_root=run_root)
         except ContractError as exc:
+            logger.error(f"stage {stage} scope failed to load: {exc}")
             raise HTTPException(500, str(exc)) from exc
 
         session_id = str(uuid.uuid4())
@@ -128,14 +130,18 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
             stage_number=stage,
         )
         sessions[session_id] = runner
+        logger.info(f"session {session_id}: starting stage {stage} (pipeline={pipeline}, run_root={run_root})")
         try:
             runner.send(brief)
         except TruncatedResponseError as exc:
+            logger.error(f"session {session_id}: {exc}")
             raise HTTPException(502, str(exc)) from exc
+        logger.info(f"session {session_id}: stage {stage} responded, ready_for_review={runner.ready_for_review}")
         return session_id
 
     @app.post("/runs/{pipeline}/start")
     def start_run(pipeline: str, req: StartSessionRequest) -> dict[str, str]:
+        logger.info(f"POST /runs/{pipeline}/start")
         if pipeline != "design":
             raise HTTPException(400, f"pipeline '{pipeline}' is not supported yet")
         session_id = _start_session(pipeline, "01", run_root=None, brief=req.brief)
@@ -143,6 +149,7 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
 
     @app.post("/runs/{slug}/stages/{stage}/start")
     def start_stage(slug: str, stage: str, req: StartSessionRequest) -> dict[str, str]:
+        logger.info(f"POST /runs/{slug}/stages/{stage}/start")
         _require_valid_stage(stage)
         run_root = repo_root / "worksheets" / slug
         if not run_root.exists():
@@ -157,13 +164,16 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
 
     @app.post("/sessions/{session_id}/messages")
     def send_message(session_id: str, req: StartSessionRequest) -> dict[str, str]:
+        logger.info(f"POST /sessions/{session_id}/messages")
         runner = sessions.get(session_id)
         if runner is None:
             raise HTTPException(404, f"no such session '{session_id}'")
         try:
             reply = runner.send(req.brief)
         except TruncatedResponseError as exc:
+            logger.error(f"session {session_id}: {exc}")
             raise HTTPException(502, str(exc)) from exc
+        logger.info(f"session {session_id}: responded, ready_for_review={runner.ready_for_review}")
         return {"reply": reply}
 
     @app.get("/sessions/{session_id}")
@@ -273,9 +283,9 @@ if __name__ == "__main__":
     _repo_root = Path(__file__).resolve().parents[2]
     _env_file = load_env(_repo_root)
     if _env_file is not None:
-        print(f"env: read {_env_file}")
+        logger.info(f"env: read {_env_file}")
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        print(
+        logger.warning(
             "env: ANTHROPIC_API_KEY is not set. Reading runs will work; starting "
             "or continuing a stage will not. Put the key in "
             f"{_repo_root / '.env'} as ANTHROPIC_API_KEY=sk-ant-..."

@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from loguru import logger
+
 from .contract import ContractError
 from .create_run import CreateRunError, create_run
 from .fs_tool import ScopedFilesystemTool, ScopeError
@@ -131,6 +133,7 @@ class StageRunner:
         return blocks
 
     def _dispatch(self, call: ToolUseBlock) -> _ToolResult:
+        logger.debug(f"dispatching tool {call.name}({call.input})")
         try:
             if call.name == "read_file":
                 return _ToolResult(call.id, self.fs_tool.read_file(call.input["path"]))
@@ -158,6 +161,7 @@ class StageRunner:
                 return self._create_run(call)
             return _ToolResult(call.id, f"unknown tool '{call.name}'", is_error=True)
         except (ScopeError, ContractError, CreateRunError, RunMdError, LogIndexError) as exc:
+            logger.warning(f"tool {call.name} rejected: {exc}")
             return _ToolResult(call.id, str(exc), is_error=True)
         except Exception as exc:
             # Backstop: an uncaught exception here would leave the transcript
@@ -166,6 +170,7 @@ class StageRunner:
             # for -- permanently breaking the session. Every failure in this
             # method has a defined recovery path (report it to the model as
             # a tool error), so a broad catch is correct here specifically.
+            logger.exception(f"tool {call.name} raised unexpectedly")
             return _ToolResult(call.id, f"tool failed: {exc}", is_error=True)
 
     def _mark_ready_for_review(self, call: ToolUseBlock) -> _ToolResult:
@@ -195,10 +200,12 @@ class StageRunner:
             # mark_ready_for_review() no longer applies.
             self.ready_for_review = False
 
-        for _ in range(MAX_TOOL_ITERATIONS):
+        for iteration in range(1, MAX_TOOL_ITERATIONS + 1):
+            logger.info(f"stage {self.stage_number}: calling model (iteration {iteration}/{MAX_TOOL_ITERATIONS})")
             response = self.model_client.create(
                 system=self._system_prompt(), messages=messages, tools=self._tools()
             )
+            logger.info(f"stage {self.stage_number}: model responded, stop_reason={response.stop_reason}")
             assistant_entry = {"role": "assistant", "content": _blocks_to_dicts(response)}
             self.transcript.append(assistant_entry)
 
@@ -214,6 +221,7 @@ class StageRunner:
             if not tool_calls:
                 return "".join(b.text for b in response.content if isinstance(b, TextBlock))
 
+            logger.info(f"stage {self.stage_number}: dispatching {len(tool_calls)} tool call(s): {[c.name for c in tool_calls]}")
             results = [self._dispatch(call) for call in tool_calls]
             tool_entry = {
                 "role": "user",
@@ -230,6 +238,7 @@ class StageRunner:
             self.transcript.append(tool_entry)
             messages.append(tool_entry)
 
+        logger.error(f"stage {self.stage_number}: exceeded {MAX_TOOL_ITERATIONS} tool-call iterations")
         raise IterationLimitExceeded(
             f"stage {self.stage_number} exceeded {MAX_TOOL_ITERATIONS} tool-call iterations"
         )
