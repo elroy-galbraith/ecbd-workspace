@@ -410,33 +410,37 @@ button {
 
 /* Stage rail */
 .stage-rail {
-  width: 232px;
+  width: 100%;
   flex-shrink: 0;
-  padding: 28px 20px;
-  border-right: 1px solid var(--border-soft);
+  padding: 14px 24px;
+  border-right: none;
+  border-bottom: 1px solid var(--border-soft);
   background: var(--bg-alt);
-  overflow-y: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 0;
 }
 .stage-rail__item {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding-top: 1px;
+  align-items: center;
+  gap: 8px;
   text-decoration: none;
   color: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .stage-rail__marker {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
 }
 .stage-rail__dot {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -445,10 +449,11 @@ button {
   color: var(--accent-ink);
 }
 .stage-rail__connector {
-  width: 2px;
-  flex: 1;
-  min-height: 18px;
-  margin: 2px 0;
+  height: 2px;
+  width: 28px;
+  min-width: 18px;
+  flex: 0 1 auto;
+  margin: 0 8px;
   background: var(--border-soft);
 }
 .stage-rail__item--approved .stage-rail__dot {
