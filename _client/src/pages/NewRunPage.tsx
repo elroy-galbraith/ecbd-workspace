@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useRuns } from "../api/queries";
 import { useStartRun } from "../api/mutations";
@@ -6,6 +6,8 @@ import { api } from "../api/client";
 import type { RunSummary } from "../api/types";
 import { ChatDrawer } from "../components/ChatDrawer";
 import { clearSessionId, storeSessionId } from "../lib/sessionStorage";
+
+const AUTO_CHECK_INTERVAL_MS = 4000;
 
 export function NewRunPage() {
   const { data: runsBeforeStart } = useRuns();
@@ -15,16 +17,20 @@ export function NewRunPage() {
   const [checking, setChecking] = useState(false);
   const [checkError, setCheckError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const inFlight = useRef(false);
 
   function handleSessionStarted(id: string) {
     setSessionId(id);
     setKnownSlugs(new Set((runsBeforeStart ?? []).map((run) => run.slug)));
   }
 
-  async function checkForNewRun() {
-    if (!sessionId) return;
-    setChecking(true);
-    setCheckError(null);
+  async function checkForNewRun(options: { silent?: boolean } = {}) {
+    if (!sessionId || inFlight.current) return;
+    inFlight.current = true;
+    if (!options.silent) {
+      setChecking(true);
+      setCheckError(null);
+    }
     try {
       const runs = await api.get<RunSummary[]>("/runs");
       const created = runs.find((run) => !knownSlugs.has(run.slug));
@@ -32,15 +38,37 @@ export function NewRunPage() {
         storeSessionId(created.slug, "01", sessionId);
         clearSessionId("new", "01");
         navigate(`/runs/${created.slug}/stages/01`);
-      } else {
+      } else if (!options.silent) {
         setCheckError("No new run yet — keep chatting, then check again once it's created.");
       }
     } catch (err) {
-      setCheckError(err instanceof Error ? err.message : "failed to check for a new run");
+      if (!options.silent) {
+        setCheckError(err instanceof Error ? err.message : "failed to check for a new run");
+      }
     } finally {
-      setChecking(false);
+      inFlight.current = false;
+      if (!options.silent) setChecking(false);
     }
   }
+
+  const checkForNewRunRef = useRef(checkForNewRun);
+  useEffect(() => {
+    checkForNewRunRef.current = checkForNewRun;
+  });
+
+  // The run doesn't exist until the agent calls create_run mid-conversation,
+  // so poll for it quietly in the background instead of relying on the user
+  // to remember to click "Check for created run" before navigating away --
+  // that manual step was the only thing linking this chat session to the
+  // run it creates (see storeSessionId below), so missing it stranded the
+  // session with no way to find its way back to an approve/reject control.
+  useEffect(() => {
+    if (!sessionId) return;
+    const id = window.setInterval(() => {
+      checkForNewRunRef.current({ silent: true });
+    }, AUTO_CHECK_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [sessionId]);
 
   return (
     <div className="page">
@@ -65,7 +93,10 @@ export function NewRunPage() {
         </div>
         {sessionId && (
           <div className="new-run-page__check">
-            <button className="btn btn--ghost" onClick={checkForNewRun} disabled={checking}>
+            <p className="new-run-page__watching muted small">
+              Watching for the run to be created — you'll be taken to it automatically.
+            </p>
+            <button className="btn btn--ghost" onClick={() => checkForNewRun()} disabled={checking}>
               {checking ? "Checking…" : "Check for created run"}
             </button>
             {checkError && <p role="alert">{checkError}</p>}
