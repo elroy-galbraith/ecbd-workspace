@@ -154,6 +154,21 @@ def test_parse_stage_table_reflects_a_tick():
     assert rows[1]["done"] is False
 
 
+def test_parse_stage_table_parses_measure_run_rows_with_no_questions_column():
+    # measure-run RUN.md tables are `| File | Stage | Done |` -- three
+    # columns, no Questions -- unlike design/audit's four.
+    text = (
+        "| File | Stage | Done |\n"
+        "|---|---|---|\n"
+        "| `01_intake.md` | 01 | [x] |\n"
+        "| `03_analysis.md` | 03 | [ ] |\n"
+    )
+    assert parse_stage_table(text) == [
+        {"file": "01_intake.md", "stage": "01", "questions": "", "done": True},
+        {"file": "03_analysis.md", "stage": "03", "questions": "", "done": False},
+    ]
+
+
 def test_parse_loop_backs_empty_table():
     assert parse_loop_backs(SAMPLE) == []
 
@@ -187,6 +202,17 @@ def test_parse_frontmatter_reads_scalars():
 def test_parse_frontmatter_missing_block_raises():
     with pytest.raises(RunMdError):
         parse_frontmatter(SAMPLE)
+
+
+def test_parse_run_md_defaults_approved_stages_when_line_is_absent():
+    # audit/measure RUN.md frontmatter never carries approved_stages -- it's
+    # a design-pipeline-only concept -- so the read-only summary must not
+    # raise for them.
+    text = FRONTMATTER_SAMPLE.replace("approved_stages: []\n", "")
+    with pytest.raises(RunMdError):
+        get_approved_stages(text)  # confirms the fixture actually lacks the line
+    result = parse_run_md(text)
+    assert result["approved_stages"] == []
 
 
 def test_parse_run_md_combines_frontmatter_table_and_loopbacks():
