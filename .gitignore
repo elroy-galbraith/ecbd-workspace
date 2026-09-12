@@ -30,3 +30,6 @@ __pycache__/
 
 # Brainstorming visual companion (superpowers skill scratch space)
 .superpowers/
+
+# Environment files
+.env
