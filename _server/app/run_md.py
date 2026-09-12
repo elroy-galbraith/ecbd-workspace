@@ -72,7 +72,9 @@ def parse_frontmatter(text: str) -> dict:
 
 
 _STAGE_ROW_RE = re.compile(
-    r"^\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|\s*([^|]*)\|\s*\[([ xX])\]\s*\|\s*$",
+    # The "Questions" column is design/audit-only (measure-run tables are
+    # `| File | Stage | Done |`, three columns) -- so it's optional here.
+    r"^\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|\s*(?:([^|]*?)\|\s*)?\[([ xX])\]\s*\|\s*$",
     re.MULTILINE,
 )
 
@@ -82,7 +84,7 @@ def parse_stage_table(text: str) -> list[dict]:
         {
             "file": m.group(1),
             "stage": m.group(2),
-            "questions": m.group(3).strip(),
+            "questions": (m.group(3) or "").strip(),
             "done": m.group(4).lower() == "x",
         }
         for m in _STAGE_ROW_RE.finditer(text)
@@ -111,12 +113,23 @@ def parse_loop_backs(text: str) -> list[dict]:
 
 
 def parse_run_md(text: str) -> dict:
+    """Read-only summary of a RUN.md, for any pipeline. `approved_stages` is a
+    design-pipeline concept (only its template carries the frontmatter line,
+    and only approve_stage/reject_stage may write it -- see
+    approved_stages_would_change); audit and measure runs never have it, so
+    this defaults to [] for them rather than raising, the same way
+    approved_stages_would_change already treats a missing line as distinct
+    from an empty list."""
     frontmatter = parse_frontmatter(text)
+    try:
+        approved_stages = get_approved_stages(text)
+    except RunMdError:
+        approved_stages = []
     return {
         "status": frontmatter.get("status"),
         "opened": frontmatter.get("opened"),
         "closed": frontmatter.get("closed"),
-        "approved_stages": get_approved_stages(text),
+        "approved_stages": approved_stages,
         "stages": parse_stage_table(text),
         "loop_backs": parse_loop_backs(text),
     }
