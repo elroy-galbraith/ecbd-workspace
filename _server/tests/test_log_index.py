@@ -9,8 +9,10 @@ def test_append_run_adds_a_row(tmp_repo: Path):
     before = log_path.read_text(encoding="utf-8")
     append_run(tmp_repo, "design-my-eval", "design", "A test eval", "2026-09-09")
     after = log_path.read_text(encoding="utf-8")
-    assert after.startswith(before)
-    assert "| design-my-eval | design | A test eval | 2026-09-09 | |" in after
+    row = "| design-my-eval | design | A test eval | 2026-09-09 | |"
+    assert row in after
+    # the row is the only change -- take it back out and the file is as it was
+    assert after.replace(row + "\n", "", 1) == before
 
 
 def test_commit_log_index_commits_only_that_file(tmp_repo: Path):
@@ -45,3 +47,36 @@ def test_commit_log_index_does_not_sweep_in_unrelated_staged_changes(tmp_repo: P
         ["git", "status", "--porcelain"], cwd=tmp_repo, check=True, capture_output=True, text=True,
     ).stdout
     assert "unrelated.txt" in status
+
+
+def test_append_run_adds_the_row_to_the_run_table_not_the_end_of_the_file(tmp_repo: Path):
+    """log.md ends with a second table -- 'Changes to the factory'. A row
+    appended at end-of-file lands inside that one and corrupts it."""
+    log_path = tmp_repo / "worksheets" / "_index" / "log.md"
+    log_path.write_text(
+        "# Run log\n\n"
+        "| Slug | Mode | Subject | Opened | Owner |\n"
+        "|---|---|---|---|---|\n"
+        "| audit-truthfulqa | audit | TruthfulQA | 2026-09-06 | |\n"
+        "\n"
+        "## Changes to the factory\n\n"
+        "| Date | Change | Affects records opened |\n"
+        "|---|---|---|\n"
+        "| 2026-09-12 | Decision cost added | design, from this date |\n",
+        encoding="utf-8",
+    )
+
+    append_run(tmp_repo, "design-my-eval", "design", "A test eval", "2026-09-09")
+
+    assert log_path.read_text(encoding="utf-8") == (
+        "# Run log\n\n"
+        "| Slug | Mode | Subject | Opened | Owner |\n"
+        "|---|---|---|---|---|\n"
+        "| audit-truthfulqa | audit | TruthfulQA | 2026-09-06 | |\n"
+        "| design-my-eval | design | A test eval | 2026-09-09 | |\n"
+        "\n"
+        "## Changes to the factory\n\n"
+        "| Date | Change | Affects records opened |\n"
+        "|---|---|---|\n"
+        "| 2026-09-12 | Decision cost added | design, from this date |\n"
+    )

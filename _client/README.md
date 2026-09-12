@@ -1,32 +1,22 @@
-# React + TypeScript + Vite
+# _client
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The browser front end for the orchestration backend in `_server/`. React, TypeScript and Vite.
 
-Currently, two official plugins are available:
+Start it from this directory:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+It serves on `http://localhost:5173` and expects the backend on `http://127.0.0.1:8000`. Start that first — see `_server/CONTEXT.md`. The full setup path, including the Anthropic API key, is the "Running the web app" section of the repo README.
+
+Point it at a different backend with `VITE_API_BASE` in a `.env` file here; `.env.example` is the template. The backend's CORS allowlist only covers port 5173, so a front end on another port is refused.
+
+```bash
+npm test    # vitest
+npm run lint    # oxlint
+npm run build   # tsc -b && vite build
+```
+
+`CONTEXT.md` in this directory says what this app does and does not do, and points at the design spec.

@@ -13,3 +13,9 @@ Run the server from this directory: `python -m app.main`. (Running it as
 it only works invoked as a module.) It binds to `127.0.0.1` only, on port
 8000 — that bind is load-bearing, not incidental (see the decision record
 above).
+
+`app/env.py` reads `ANTHROPIC_API_KEY` from a `.env` at the repo root, or
+from the main checkout's `.env` when the repo root is a git worktree. It
+runs from `main.py`'s `__main__` block only, so `create_app()` in a test
+never touches the real environment. The README's "Running the web app"
+section is the setup path a person follows.

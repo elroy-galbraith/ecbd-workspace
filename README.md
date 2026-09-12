@@ -69,6 +69,8 @@ Keep [_shared/glossary.md](_shared/glossary.md) open the first time. ECBD draws 
 
 The workspace is markdown with one exception: [_tools/item_analysis.py](_tools/item_analysis.py) computes item difficulty, discrimination, reliability and ranking stability from OpenEval's item-level data. It needs only pandas, pyarrow, numpy and scipy. Audits of benchmarks with archive coverage can answer SUPPORT questions with measurements instead of absence.
 
+That is the only code a *run* touches. `_server/` and `_client/` hold a local web app that drives the same pipelines — factory, not product, and covered under [Running the web app](#running-the-web-app) below.
+
 ## Setting up for a team
 
 Answer **[setup/questionnaire.md](setup/questionnaire.md)** once. Seven questions about what you evaluate, who reads results, what runner your builds target, and where your bar for validity evidence sits. The answers become `_shared/house-context.md`, which nine stages load.
@@ -84,6 +86,63 @@ Tell the agent what you want, in your own words:
 > "Audit whether MMLU is fit for choosing a model for our legal research product."
 
 It routes itself from `CLAUDE.md`, copies the right template into `worksheets/`, and starts at stage 1. You don't need to know the stage names.
+
+## Running the web app
+
+The pipelines were built to run in Claude Code against this folder. There is also a local web app that runs them: a backend ([_server/](_server/CONTEXT.md)) that executes one stage at a time under the same contracts, and a browser front end ([_client/](_client/CONTEXT.md)) for the chat, the document being written, and the human check.
+
+Everything stays on your machine. The backend binds to `127.0.0.1` and never commits run content — the same guarantee [worksheets/CONTEXT.md](worksheets/CONTEXT.md) already makes about run folders. See [the decision record](docs/decisions/2026-09-09-orchestration-backend.md) for why.
+
+You need Python 3.11 or newer, Node 20 or newer, and an Anthropic API key.
+
+### Once
+
+Put the key in a `.env` file at the repo root. Copy `.env.example` and fill it in:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+`.env` is gitignored and never leaves your machine. The backend reads it at startup; a key already exported in your shell wins over the file. If you work in a git worktree, the main checkout's `.env` is used, so the key lives in one place.
+
+Install both halves:
+
+```bash
+cd _server && python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt
+```
+
+```bash
+cd _client && npm install
+```
+
+On macOS and Linux the interpreter is `.venv/bin/python` instead of `.venv/Scripts/python`.
+
+### Every time
+
+Two terminals. Backend first, from `_server/`:
+
+```bash
+.venv/Scripts/python -m app.main
+```
+
+It must be started as a module from that directory — `python app/main.py` fails, because `main.py` imports its package by relative path. It serves on `http://127.0.0.1:8000` and prints which `.env` it read.
+
+Frontend second, from `_client/`:
+
+```bash
+npm run dev
+```
+
+Then open `http://localhost:5173`. You should see the run list from `worksheets/_index/log.md`.
+
+### When it doesn't start
+
+| What you see | What it means |
+|---|---|
+| `error while attempting to bind on address ('127.0.0.1', 8000)` | A backend is already running on that port. Use it, or stop it first. |
+| `env: ANTHROPIC_API_KEY is not set` | Reading runs will work; starting or continuing a stage will not. The `.env` is missing or in the wrong place. |
+| The page loads but the run list is empty or errors | The backend isn't up, or it's on another port. `VITE_API_BASE` in `_client/.env` points the front end elsewhere; it defaults to `http://127.0.0.1:8000`. |
+| A run opens but stays on "Loading run…" | That run's folder isn't in this checkout. Run folders are gitignored, so a fresh clone or a worktree has the log but not the runs. |
 
 ## What the workspace asks of you
 
