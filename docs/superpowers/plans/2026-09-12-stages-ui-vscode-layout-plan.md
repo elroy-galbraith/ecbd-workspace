@@ -101,13 +101,10 @@ Expected: FAIL — `404 Not Found` / `AssertionError` since the route doesn't ex
 In `_server/app/main.py`, add next to `_resolve_run_file` (around line 47):
 
 ```python
-_IGNORED_TREE_ENTRIES = {".sessions"}
-
-
 def _build_tree(directory: Path, root: Path) -> list[dict[str, Any]]:
     nodes: list[dict[str, Any]] = []
     for child in sorted(directory.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
-        if child.name.startswith(".") or child.name in _IGNORED_TREE_ENTRIES:
+        if child.name.startswith("."):  # covers .sessions/ and any other dotfile
             continue
         rel_path = child.relative_to(root).as_posix()
         if child.is_dir():
@@ -782,24 +779,8 @@ Add `mockLoadPanelCollapsed.mockReturnValue(null);` to the existing `beforeEach`
 Add two new tests inside `describe("ChatDrawer", ...)`:
 
 ```tsx
-  it("defaults the panel variant to expanded when nothing is stored, and persists a collapse", async () => {
+  it("defaults to collapsed when nothing is stored (matching today's behavior), and persists an expand", async () => {
     mockLoadSessionId.mockReturnValue("sess-1");
-    mockUseSession.mockReturnValue({
-      data: { transcript: [], ready_for_review: false },
-      isError: false,
-      error: null,
-    });
-
-    render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} variant="panel" />);
-
-    expect(screen.getByRole("button", { name: /collapse chat/i })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /collapse chat/i }));
-    expect(mockStorePanelCollapsed).toHaveBeenCalledWith("design-my-eval", "chat", true);
-  });
-
-  it("restores a previously-collapsed panel from storage", () => {
-    mockLoadSessionId.mockReturnValue("sess-1");
-    mockLoadPanelCollapsed.mockReturnValue(true);
     mockUseSession.mockReturnValue({
       data: { transcript: [], ready_for_review: false },
       isError: false,
@@ -809,6 +790,22 @@ Add two new tests inside `describe("ChatDrawer", ...)`:
     render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} variant="panel" />);
 
     expect(screen.getByRole("button", { name: /expand chat/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /expand chat/i }));
+    expect(mockStorePanelCollapsed).toHaveBeenCalledWith("design-my-eval", "chat", false);
+  });
+
+  it("restores a previously-expanded panel from storage", () => {
+    mockLoadSessionId.mockReturnValue("sess-1");
+    mockLoadPanelCollapsed.mockReturnValue(false);
+    mockUseSession.mockReturnValue({
+      data: { transcript: [], ready_for_review: false },
+      isError: false,
+      error: null,
+    });
+
+    render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} variant="panel" />);
+
+    expect(screen.getByRole("button", { name: /collapse chat/i })).toBeInTheDocument();
   });
 
   it("applies the panel variant class when requested, and the drawer variant by default", () => {
@@ -907,9 +904,6 @@ Expected: PASS
 Append to `_client/src/index.css` (near the existing "chat-drawer" rules, after `.chat-drawer--empty`'s block):
 
 ```css
-.chat-drawer--drawer {
-  border-top: 1px solid var(--border-soft);
-}
 .chat-drawer--panel {
   border-top: none;
   border-left: 1px solid var(--border-soft);
@@ -927,7 +921,7 @@ Append to `_client/src/index.css` (near the existing "chat-drawer" rules, after 
 }
 ```
 
-The pre-existing bare `.chat-drawer` rule (`border-top: 1px solid var(--border-soft); ... max-height: 340px;`) stays exactly as-is — `.chat-drawer--drawer` and `.chat-drawer--panel` only add to or override it via the modifier class, so `NewRunPage`'s current look (which renders `chat-drawer chat-drawer--drawer chat-drawer--empty`) is unaffected.
+`.chat-drawer--drawer` gets no CSS rule at all — it's a marker class only (asserted by Step 1's third new test), needed so the panel/drawer distinction exists in the DOM without touching the bare `.chat-drawer` selector's existing rules. Since `.chat-drawer--panel`'s properties (`border-top: none`, `max-height: none`, etc.) only apply where that class is present, the pre-existing bare `.chat-drawer` rule stays exactly as written and `NewRunPage`'s current look (which renders `chat-drawer chat-drawer--drawer chat-drawer--empty`, picking up no new styling) is unaffected.
 
 - [ ] **Step 6: Run the full frontend test suite**
 
@@ -1035,8 +1029,9 @@ git commit -m "style(frontend): reorient the stage rail from vertical to horizon
 
 **Files:**
 - Modify: `_client/src/pages/StagePage.tsx`
-- Modify: `_client/src/index.css` (adjust `.stage-page__body`/`.stage-page__document` only if needed — see Step 3)
 - Test: `_client/src/pages/StagePage.test.tsx`
+
+No `index.css` change is needed here: `.stage-page__body`'s existing `display: flex; flex: 1; min-height: 0;` already accommodates a three-child row (`FileTree`, `main.stage-page__document`, `ChatDrawer`) exactly as it accommodated the previous two-child row — the fixed-width/flex-shrink behavior for the new children comes from `.file-tree` (Task 4) and `.chat-drawer--panel` (Task 5)'s own CSS.
 
 **Interfaces:**
 - Consumes: `FileTree` (Task 4), `ChatDrawer`'s `variant` prop (Task 5), horizontal `StageRail` CSS (Task 6), `useRunTree` (Task 2, via `FileTree`).
