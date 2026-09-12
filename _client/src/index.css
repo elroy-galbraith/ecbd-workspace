@@ -901,6 +901,22 @@ button {
   border-color: var(--accent);
 }
 
+.chat-drawer--panel {
+  border-top: none;
+  border-left: 1px solid var(--border-soft);
+  max-height: none;
+  height: 100%;
+  width: 320px;
+  flex-shrink: 0;
+}
+.chat-drawer--panel.chat-drawer--collapsed {
+  width: auto;
+  overflow: hidden;
+}
+.chat-drawer--panel.chat-drawer--collapsed .chat-drawer__toggle {
+  margin: 12px;
+}
+
 .chat-drawer__toggle {
   align-self: flex-start;
   display: inline-flex;

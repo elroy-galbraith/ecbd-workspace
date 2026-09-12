@@ -26,6 +26,8 @@ vi.mock("./lib/sessionStorage", () => ({
   loadSessionId: (...args: unknown[]) => mockLoadSessionId(...args),
   storeSessionId: vi.fn(),
   clearSessionId: vi.fn(),
+  loadPanelCollapsed: vi.fn().mockReturnValue(null),
+  storePanelCollapsed: vi.fn(),
 }));
 
 const runDetail = {
