@@ -84,10 +84,20 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
 
     @app.get("/runs")
     def list_runs() -> list[dict[str, Any]]:
+        # log.md holds more than one table -- 'Changes to the factory' has its
+        # own, narrower columns. Read the run table and stop where it ends.
         log_path = repo_root / "worksheets" / "_index" / "log.md"
         rows = []
+        in_run_table = False
         for line in log_path.read_text(encoding="utf-8").splitlines():
-            if not line.startswith("|") or line.startswith("| Slug") or line.startswith("|---"):
+            if line.startswith("| Slug"):
+                in_run_table = True
+                continue
+            if not in_run_table:
+                continue
+            if not line.startswith("|"):
+                break
+            if line.startswith("|---"):
                 continue
             cols = [c.strip() for c in line.strip("|").split("|")]
             rows.append({"slug": cols[0], "mode": cols[1], "subject": cols[2], "opened": cols[3]})
@@ -254,6 +264,20 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
 
 
 if __name__ == "__main__":
+    import os
+
     import uvicorn
 
+    from .env import load_env
+
+    _repo_root = Path(__file__).resolve().parents[2]
+    _env_file = load_env(_repo_root)
+    if _env_file is not None:
+        print(f"env: read {_env_file}")
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        print(
+            "env: ANTHROPIC_API_KEY is not set. Reading runs will work; starting "
+            "or continuing a stage will not. Put the key in "
+            f"{_repo_root / '.env'} as ANTHROPIC_API_KEY=sk-ant-..."
+        )
     uvicorn.run(create_app(), host="127.0.0.1", port=8000)

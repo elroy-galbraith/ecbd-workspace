@@ -224,3 +224,25 @@ def test_cors_allows_the_vite_dev_origin(tmp_repo: Path):
     api = TestClient(app)
     response = api.get("/runs", headers={"Origin": "http://localhost:5173"})
     assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_list_runs_reads_only_the_run_table(tmp_repo: Path):
+    """log.md carries a second table -- 'Changes to the factory' -- with its
+    own, narrower columns. Only the run table describes runs."""
+    log = tmp_repo / "worksheets" / "_index" / "log.md"
+    log.write_text(
+        "# Run log\n\n"
+        "| Slug | Mode | Subject | Opened | Owner |\n"
+        "|---|---|---|---|---|\n"
+        "| design-my-eval | design | A faithfulness eval | 2026-09-07 | |\n\n"
+        "## Changes to the factory\n\n"
+        "| Date | Change | Affects records opened |\n"
+        "|---|---|---|\n"
+        "| 2026-09-12 | Decision cost added | design, from this date |\n",
+        encoding="utf-8",
+    )
+    api = TestClient(create_app(model_client=FakeModelClient([]), repo_root=tmp_repo))
+
+    assert api.get("/runs").json() == [
+        {"slug": "design-my-eval", "mode": "design", "subject": "A faithfulness eval", "opened": "2026-09-07"}
+    ]

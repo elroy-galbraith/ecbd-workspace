@@ -24,6 +24,11 @@ worksheets/*/
 .sessions/
 _server/.venv/
 
+# Your Anthropic API key. `.env.example` is the tracked copy — the real one
+# never is.
+.env
+!.env.example
+
 # Python cache files
 __pycache__/
 *.pyc
