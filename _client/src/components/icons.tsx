@@ -119,6 +119,20 @@ export function IconFolder(props: IconProps) {
   );
 }
 
+export function IconFile(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path
+        d="M6.5 3.5h5l3 3v10a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path d="M11.5 3.5V6.5a1 1 0 0 0 1 1H15.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function IconWrench(props: IconProps) {
   return (
     <svg {...base(props)}>
