@@ -13,6 +13,7 @@ The catalog: one line per run, added when the run folder is created. It records 
 | audit-gpqa | audit | GPQA fitness for model selection | 2026-09-07 | |
 | measure-gpqa | measure | Item-level psychometrics for audit-gpqa | 2026-09-07 | |
 | design-failure-mode-id | design | Can a model identify ECBD failure modes from benchmark docs | 2026-09-07 | |
+| design-jp-enterprise-release-gate | design | Release gate for Japanese enterprise document-QA/reply-drafting assistant | 2026-09-12 | |
 
 ## Changes to the factory
 
