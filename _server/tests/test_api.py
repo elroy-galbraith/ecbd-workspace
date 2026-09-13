@@ -58,6 +58,51 @@ def test_full_stage_1_to_stage_2_flow_with_a_loop_back(tmp_repo: Path):
     assert "intended use was too vague" in run_md
 
 
+def test_session_survives_a_backend_restart(tmp_repo: Path):
+    # The in-memory `sessions` registry is wiped when the process restarts,
+    # but the transcript + meta sidecar on disk let a fresh app instance
+    # rehydrate the same session instead of 404ing it away.
+    client_stage_1 = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "A faithfulness eval"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c2", name="write_file", input={"path": "01_intended-use.md", "content": "the intended use, spelled out"})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="what's the intended use?")], stop_reason="end_turn"),
+    ])
+    app = create_app(model_client=client_stage_1, repo_root=tmp_repo)
+    api = TestClient(app)
+    start = api.post("/runs/design/start", json={"brief": "I need a faithfulness eval"})
+    assert start.status_code == 200
+    session_id = start.json()["session_id"]
+
+    # Simulate a restart: a brand-new app/registry over the same repo_root.
+    client_restarted = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c3", name="mark_ready_for_review", input={})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="drafted, ready for review")], stop_reason="end_turn"),
+    ])
+    app2 = create_app(model_client=client_restarted, repo_root=tmp_repo)
+    api2 = TestClient(app2)
+
+    fetched = api2.get(f"/sessions/{session_id}")
+    assert fetched.status_code == 200
+    assert len(fetched.json()["transcript"]) >= 2
+    assert fetched.json()["ready_for_review"] is False
+
+    reply = api2.post(f"/sessions/{session_id}/messages", json={"brief": "it's for grading summaries"})
+    assert reply.status_code == 200
+    assert reply.json()["reply"] == "drafted, ready for review"
+
+    # The rehydrated runner picked up the create_run binding from before the
+    # restart, so mark_ready_for_review could tick the real RUN.md.
+    run_md = (tmp_repo / "worksheets" / "design-my-eval" / "RUN.md").read_text()
+    assert "[x]" in run_md
+
+
+def test_get_session_404_for_a_session_that_never_existed(tmp_repo: Path):
+    app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api = TestClient(app)
+    response = api.get("/sessions/not-a-real-session-id")
+    assert response.status_code == 404
+
+
 def test_mark_ready_for_review_alone_does_not_unlock_stage_2(tmp_repo: Path):
     # The model ticks its own row via mark_ready_for_review, but nobody ever
     # calls POST .../approve. Stage 2 must stay locked -- this is the
