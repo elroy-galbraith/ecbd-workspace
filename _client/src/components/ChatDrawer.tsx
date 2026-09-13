@@ -21,8 +21,12 @@ export function ChatDrawer({ runKey, stage, startSession, onSessionId, variant =
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
-  const session = useSession(sessionId ?? undefined);
-  const sendMessage = useSendMessage(sessionId ?? "", runKey);
+  // "new" is a placeholder key for the not-yet-created bootstrap run (see
+  // NewRunPage) -- it isn't a real slug the backend can rehydrate a scope
+  // from, so only forward it once a run actually exists under this key.
+  const knownSlug = runKey !== "new" ? runKey : undefined;
+  const session = useSession(sessionId ?? undefined, knownSlug, stage);
+  const sendMessage = useSendMessage(sessionId ?? "", runKey, stage);
 
   const sessionGone = session.isError && session.error instanceof ApiError && session.error.status === 404;
 

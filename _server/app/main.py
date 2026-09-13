@@ -97,35 +97,65 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         }
         meta_path.write_text(json.dumps(meta), encoding="utf-8")
 
-    def _get_runner(session_id: str) -> StageRunner | None:
-        """Look up a running session, rehydrating it from disk if the
-        in-memory registry lost it (e.g. the backend restarted) but its
-        transcript and metadata sidecar are still there."""
-        runner = sessions.get(session_id)
-        if runner is not None:
-            return runner
-        meta_path = _session_meta_path(session_id)
-        if not meta_path.exists():
-            return None
-        meta = json.loads(meta_path.read_text(encoding="utf-8"))
-        run_root = repo_root / meta["run_root"] if meta["run_root"] else None
+    def _infer_ready_for_review(transcript: list[dict[str, Any]]) -> bool:
+        """Replay StageRunner.send()'s own bookkeeping rule (a fresh human
+        message clears the flag, a mark_ready_for_review tool call sets it)
+        for a transcript that has no meta sidecar to read the flag from."""
+        ready = False
+        for turn in transcript:
+            if turn["role"] == "user" and any(b.get("type") == "text" for b in turn["content"]):
+                ready = False
+            elif turn["role"] == "assistant" and any(
+                b.get("type") == "tool_use" and b.get("name") == "mark_ready_for_review" for b in turn["content"]
+            ):
+                ready = True
+        return ready
+
+    def _rehydrate(session_id: str, pipeline: str, stage: str, run_root: Path | None) -> StageRunner | None:
         try:
-            scope = load_stage_scope(stage_contract_path(meta["stage"]), repo_root=repo_root, run_root=run_root)
+            scope = load_stage_scope(stage_contract_path(stage), repo_root=repo_root, run_root=run_root)
         except ContractError as exc:
             logger.error(f"session {session_id}: failed to rehydrate: {exc}")
             return None
+        transcript = TranscriptStore(repo_root / ".sessions" / f"{session_id}.jsonl")
         runner = StageRunner(
             scope=scope,
             model_client=get_model_client(),
-            transcript=TranscriptStore(repo_root / ".sessions" / f"{session_id}.jsonl"),
+            transcript=transcript,
             repo_root=repo_root,
-            pipeline=meta["pipeline"],
-            stage_number=meta["stage"],
+            pipeline=pipeline,
+            stage_number=stage,
         )
-        runner.ready_for_review = meta["ready_for_review"]
+        runner.ready_for_review = _infer_ready_for_review(transcript.read_all())
         sessions[session_id] = runner
+        _write_session_meta(session_id, runner)  # self-heal: next restart won't need the fallback
         logger.info(f"session {session_id}: rehydrated from disk")
         return runner
+
+    def _get_runner(session_id: str, slug: str | None = None, stage: str | None = None) -> StageRunner | None:
+        """Look up a running session, rehydrating it from disk if the
+        in-memory registry lost it (e.g. the backend restarted).
+
+        Sessions started after the meta sidecar existed carry their own
+        pipeline/stage/run_root in `.sessions/<id>.meta.json`. Sessions
+        that predate it don't -- for those, fall back to the slug/stage
+        the frontend already tracks for this chat panel, as long as the
+        transcript file itself is still on disk."""
+        runner = sessions.get(session_id)
+        if runner is not None:
+            return runner
+        if not (repo_root / ".sessions" / f"{session_id}.jsonl").exists():
+            return None
+        meta_path = _session_meta_path(session_id)
+        if meta_path.exists():
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            run_root = repo_root / meta["run_root"] if meta["run_root"] else None
+            return _rehydrate(session_id, meta["pipeline"], meta["stage"], run_root)
+        if slug is not None and stage is not None and stage in _STAGE_DIRS:
+            run_root = repo_root / "worksheets" / slug
+            if run_root.exists():
+                return _rehydrate(session_id, slug.split("-", 1)[0], stage, run_root)
+        return None
 
     def stage_contract_path(stage: str) -> Path:
         return repo_root / "01-design" / _STAGE_DIRS[stage] / "CONTEXT.md"
@@ -226,9 +256,11 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         return {"session_id": session_id}
 
     @app.post("/sessions/{session_id}/messages")
-    def send_message(session_id: str, req: StartSessionRequest) -> dict[str, str]:
+    def send_message(
+        session_id: str, req: StartSessionRequest, slug: str | None = None, stage: str | None = None
+    ) -> dict[str, str]:
         logger.info(f"POST /sessions/{session_id}/messages")
-        runner = _get_runner(session_id)
+        runner = _get_runner(session_id, slug=slug, stage=stage)
         if runner is None:
             raise HTTPException(404, f"no such session '{session_id}'")
         try:
@@ -242,8 +274,8 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         return {"reply": reply}
 
     @app.get("/sessions/{session_id}")
-    def get_session(session_id: str) -> dict[str, Any]:
-        runner = _get_runner(session_id)
+    def get_session(session_id: str, slug: str | None = None, stage: str | None = None) -> dict[str, Any]:
+        runner = _get_runner(session_id, slug=slug, stage=stage)
         if runner is None:
             raise HTTPException(404, f"no such session '{session_id}'")
         return {"transcript": runner.transcript.read_all(), "ready_for_review": runner.ready_for_review}

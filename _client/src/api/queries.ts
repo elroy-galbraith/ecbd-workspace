@@ -14,10 +14,15 @@ export function useRun(slug: string | undefined) {
   });
 }
 
-export function useSession(sessionId: string | undefined) {
+export function useSession(sessionId: string | undefined, slug?: string, stage?: string) {
   return useQuery({
     queryKey: ["session", sessionId],
-    queryFn: () => api.get<SessionState>(`/sessions/${sessionId}`),
+    queryFn: () => {
+      // slug/stage let the backend rehydrate a session it lost track of
+      // (e.g. after a restart) that predates its own metadata sidecar.
+      const query = slug && stage ? `?${new URLSearchParams({ slug, stage })}` : "";
+      return api.get<SessionState>(`/sessions/${sessionId}${query}`);
+    },
     enabled: sessionId !== undefined,
     retry: false,
   });

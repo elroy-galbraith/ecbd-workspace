@@ -96,6 +96,43 @@ def test_session_survives_a_backend_restart(tmp_repo: Path):
     assert "[x]" in run_md
 
 
+def test_session_predating_the_meta_sidecar_rehydrates_via_slug_and_stage(tmp_repo: Path):
+    # A session started before the meta.json sidecar existed has only its
+    # transcript on disk. The frontend still knows which run/stage this chat
+    # panel belongs to, so it can pass slug+stage as a fallback -- this must
+    # recover the session exactly like a meta.json-backed one would.
+    client_stage_1 = FakeModelClient([
+        ModelResponse(content=[ToolUseBlock(id="c1", name="create_run", input={"slug": "my-eval", "subject": "A faithfulness eval"})], stop_reason="tool_use"),
+        ModelResponse(content=[ToolUseBlock(id="c2", name="write_file", input={"path": "01_intended-use.md", "content": "the intended use, spelled out"})], stop_reason="tool_use"),
+        ModelResponse(content=[TextBlock(text="what's the intended use?")], stop_reason="end_turn"),
+    ])
+    app = create_app(model_client=client_stage_1, repo_root=tmp_repo)
+    api = TestClient(app)
+    start = api.post("/runs/design/start", json={"brief": "I need a faithfulness eval"})
+    session_id = start.json()["session_id"]
+
+    # Simulate "created before this fix" by deleting the sidecar it wrote.
+    (tmp_repo / ".sessions" / f"{session_id}.meta.json").unlink()
+
+    app2 = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api2 = TestClient(app2)
+
+    without_hint = api2.get(f"/sessions/{session_id}")
+    assert without_hint.status_code == 404  # no meta, no hint -- can't rehydrate
+
+    with_hint = api2.get(f"/sessions/{session_id}", params={"slug": "design-my-eval", "stage": "01"})
+    assert with_hint.status_code == 200
+    assert len(with_hint.json()["transcript"]) >= 2
+    assert with_hint.json()["ready_for_review"] is False
+
+    # Having rehydrated once, it self-heals: a plain lookup now works even
+    # from a third instance, with no slug/stage hint needed.
+    app3 = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
+    api3 = TestClient(app3)
+    healed = api3.get(f"/sessions/{session_id}")
+    assert healed.status_code == 200
+
+
 def test_get_session_404_for_a_session_that_never_existed(tmp_repo: Path):
     app = create_app(model_client=FakeModelClient([]), repo_root=tmp_repo)
     api = TestClient(app)
