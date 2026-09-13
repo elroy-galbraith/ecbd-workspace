@@ -15,10 +15,15 @@ export function useStartStage(slug: string, stage: string) {
   });
 }
 
-export function useSendMessage(sessionId: string, slug?: string) {
+export function useSendMessage(sessionId: string, slug?: string, stage?: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (brief: string) => api.post<{ reply: string }>(`/sessions/${sessionId}/messages`, { brief }),
+    mutationFn: (brief: string) => {
+      // slug/stage let the backend rehydrate a session it lost track of
+      // (e.g. after a restart) that predates its own metadata sidecar.
+      const query = slug && stage ? `?${new URLSearchParams({ slug, stage })}` : "";
+      return api.post<{ reply: string }>(`/sessions/${sessionId}/messages${query}`, { brief });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
       if (slug) {
