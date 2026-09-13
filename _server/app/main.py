@@ -1,6 +1,7 @@
 # _server/app/main.py
 from __future__ import annotations
 
+import json
 import uuid
 from pathlib import Path
 from typing import Any
@@ -81,6 +82,51 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
     def get_model_client() -> ModelClient:
         return model_client or AnthropicModelClient()
 
+    def _session_meta_path(session_id: str) -> Path:
+        return repo_root / ".sessions" / f"{session_id}.meta.json"
+
+    def _write_session_meta(session_id: str, runner: StageRunner) -> None:
+        meta_path = _session_meta_path(session_id)
+        meta_path.parent.mkdir(parents=True, exist_ok=True)
+        run_root = runner.scope.run_root
+        meta = {
+            "pipeline": runner.pipeline,
+            "stage": runner.stage_number,
+            "run_root": run_root.relative_to(repo_root).as_posix() if run_root else None,
+            "ready_for_review": runner.ready_for_review,
+        }
+        meta_path.write_text(json.dumps(meta), encoding="utf-8")
+
+    def _get_runner(session_id: str) -> StageRunner | None:
+        """Look up a running session, rehydrating it from disk if the
+        in-memory registry lost it (e.g. the backend restarted) but its
+        transcript and metadata sidecar are still there."""
+        runner = sessions.get(session_id)
+        if runner is not None:
+            return runner
+        meta_path = _session_meta_path(session_id)
+        if not meta_path.exists():
+            return None
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        run_root = repo_root / meta["run_root"] if meta["run_root"] else None
+        try:
+            scope = load_stage_scope(stage_contract_path(meta["stage"]), repo_root=repo_root, run_root=run_root)
+        except ContractError as exc:
+            logger.error(f"session {session_id}: failed to rehydrate: {exc}")
+            return None
+        runner = StageRunner(
+            scope=scope,
+            model_client=get_model_client(),
+            transcript=TranscriptStore(repo_root / ".sessions" / f"{session_id}.jsonl"),
+            repo_root=repo_root,
+            pipeline=meta["pipeline"],
+            stage_number=meta["stage"],
+        )
+        runner.ready_for_review = meta["ready_for_review"]
+        sessions[session_id] = runner
+        logger.info(f"session {session_id}: rehydrated from disk")
+        return runner
+
     def stage_contract_path(stage: str) -> Path:
         return repo_root / "01-design" / _STAGE_DIRS[stage] / "CONTEXT.md"
 
@@ -151,6 +197,8 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         except TruncatedResponseError as exc:
             logger.error(f"session {session_id}: {exc}")
             raise HTTPException(502, str(exc)) from exc
+        finally:
+            _write_session_meta(session_id, runner)
         logger.info(f"session {session_id}: stage {stage} responded, ready_for_review={runner.ready_for_review}")
         return session_id
 
@@ -180,7 +228,7 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
     @app.post("/sessions/{session_id}/messages")
     def send_message(session_id: str, req: StartSessionRequest) -> dict[str, str]:
         logger.info(f"POST /sessions/{session_id}/messages")
-        runner = sessions.get(session_id)
+        runner = _get_runner(session_id)
         if runner is None:
             raise HTTPException(404, f"no such session '{session_id}'")
         try:
@@ -188,12 +236,14 @@ def create_app(model_client: ModelClient | None = None, repo_root: Path | None =
         except TruncatedResponseError as exc:
             logger.error(f"session {session_id}: {exc}")
             raise HTTPException(502, str(exc)) from exc
+        finally:
+            _write_session_meta(session_id, runner)
         logger.info(f"session {session_id}: responded, ready_for_review={runner.ready_for_review}")
         return {"reply": reply}
 
     @app.get("/sessions/{session_id}")
     def get_session(session_id: str) -> dict[str, Any]:
-        runner = sessions.get(session_id)
+        runner = _get_runner(session_id)
         if runner is None:
             raise HTTPException(404, f"no such session '{session_id}'")
         return {"transcript": runner.transcript.read_all(), "ready_for_review": runner.ready_for_review}
