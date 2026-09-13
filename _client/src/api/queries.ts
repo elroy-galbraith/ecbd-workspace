@@ -14,7 +14,12 @@ export function useRun(slug: string | undefined) {
   });
 }
 
-export function useSession(sessionId: string | undefined, slug?: string, stage?: string) {
+export function useSession(
+  sessionId: string | undefined,
+  slug?: string,
+  stage?: string,
+  options?: { live?: boolean },
+) {
   return useQuery({
     queryKey: ["session", sessionId],
     queryFn: () => {
@@ -25,6 +30,10 @@ export function useSession(sessionId: string | undefined, slug?: string, stage?:
     },
     enabled: sessionId !== undefined,
     retry: false,
+    // While a reply is in flight, the backend appends each tool call to the
+    // session's transcript as it happens -- polling surfaces that live
+    // instead of only showing the final result once the request completes.
+    refetchInterval: options?.live ? 1000 : undefined,
   });
 }
 
