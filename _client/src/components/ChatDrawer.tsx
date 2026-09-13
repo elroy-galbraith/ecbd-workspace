@@ -4,6 +4,7 @@ import { useSession } from "../api/queries";
 import { ApiError } from "../api/client";
 import { clearSessionId, loadPanelCollapsed, loadSessionId, storePanelCollapsed, storeSessionId } from "../lib/sessionStorage";
 import { TranscriptView } from "./TranscriptView";
+import { AgentMascot, getAgentActivity } from "./AgentMascot";
 import { IconChat, IconSend } from "./icons";
 
 interface ChatDrawerProps {
@@ -25,8 +26,8 @@ export function ChatDrawer({ runKey, stage, startSession, onSessionId, variant =
   // NewRunPage) -- it isn't a real slug the backend can rehydrate a scope
   // from, so only forward it once a run actually exists under this key.
   const knownSlug = runKey !== "new" ? runKey : undefined;
-  const session = useSession(sessionId ?? undefined, knownSlug, stage);
   const sendMessage = useSendMessage(sessionId ?? "", runKey, stage);
+  const session = useSession(sessionId ?? undefined, knownSlug, stage, { live: sendMessage.isPending });
 
   const sessionGone = session.isError && session.error instanceof ApiError && session.error.status === 404;
 
@@ -93,6 +94,9 @@ export function ChatDrawer({ runKey, stage, startSession, onSessionId, variant =
       {!collapsed && (
         <>
           {session.data && <TranscriptView entries={session.data.transcript} />}
+          {sendMessage.isPending && session.data && (
+            <AgentMascot activity={getAgentActivity(session.data.transcript)} />
+          )}
           <div className="chat-drawer__composer">
             <textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Reply..." />
             <button

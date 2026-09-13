@@ -1012,6 +1012,49 @@ button {
   color: var(--danger);
 }
 
+.agent-mascot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin: 0 24px 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  color: var(--muted);
+  font: 400 12.5px/1 var(--font-mono);
+}
+.agent-mascot__face {
+  display: inline-flex;
+  color: var(--accent);
+  animation: agent-mascot-bob 1.6s ease-in-out infinite;
+}
+.agent-mascot--reading .agent-mascot__face {
+  animation-name: agent-mascot-bob, agent-mascot-tilt;
+}
+.agent-mascot--writing .agent-mascot__face {
+  animation-name: agent-mascot-bob, agent-mascot-jiggle;
+}
+@keyframes agent-mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@keyframes agent-mascot-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-4deg); }
+}
+@keyframes agent-mascot-jiggle {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1px); }
+  75% { transform: translateX(1px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agent-mascot__face {
+    animation: none;
+  }
+}
+
 .chat-drawer__composer {
   display: flex;
   gap: 10px;

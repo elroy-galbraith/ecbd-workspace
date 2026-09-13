@@ -23,14 +23,16 @@ vi.mock("../api/queries", () => ({
 }));
 
 const mockMutateAsync = vi.fn();
+let mockSendMessageState = { mutateAsync: mockMutateAsync, isPending: false, isError: false, error: null as Error | null };
 vi.mock("../api/mutations", () => ({
-  useSendMessage: () => ({ mutateAsync: mockMutateAsync, isPending: false, isError: false, error: null }),
+  useSendMessage: () => mockSendMessageState,
 }));
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockUseSession.mockReturnValue({ data: undefined, isError: false, error: null });
   mockLoadPanelCollapsed.mockReturnValue(null);
+  mockSendMessageState = { mutateAsync: mockMutateAsync, isPending: false, isError: false, error: null };
 });
 
 describe("ChatDrawer", () => {
@@ -94,6 +96,49 @@ describe("ChatDrawer", () => {
     render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} variant="panel" />);
 
     expect(screen.getByRole("button", { name: /collapse chat/i })).toBeInTheDocument();
+  });
+
+  it("shows the agent mascot with the current activity while a reply is pending", async () => {
+    mockLoadSessionId.mockReturnValue("sess-1");
+    mockSendMessageState.isPending = true;
+    mockUseSession.mockReturnValue({
+      data: {
+        transcript: [
+          { role: "assistant", content: [{ type: "tool_use", id: "t1", name: "read_file", input: { path: "01.md" } }] },
+        ],
+        ready_for_review: false,
+      },
+      isError: false,
+      error: null,
+    });
+
+    render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: /expand chat/i }));
+
+    expect(screen.getByText("reading 01.md")).toBeInTheDocument();
+  });
+
+  it("passes live: true to useSession only while a reply is pending", () => {
+    mockLoadSessionId.mockReturnValue("sess-1");
+    mockSendMessageState.isPending = true;
+
+    render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} />);
+
+    expect(mockUseSession).toHaveBeenCalledWith("sess-1", "design-my-eval", "02", { live: true });
+  });
+
+  it("does not show the mascot once the reply has resolved", async () => {
+    mockLoadSessionId.mockReturnValue("sess-1");
+    mockUseSession.mockReturnValue({
+      data: { transcript: [{ role: "assistant", content: [{ type: "text", text: "drafted" }] }], ready_for_review: false },
+      isError: false,
+      error: null,
+    });
+
+    render(<ChatDrawer runKey="design-my-eval" stage="02" startSession={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: /expand chat/i }));
+
+    expect(screen.queryByText(/thinking/i)).not.toBeInTheDocument();
   });
 
   it("applies the panel variant class when requested, and the drawer variant by default", () => {
